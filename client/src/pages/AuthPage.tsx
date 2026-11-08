@@ -349,7 +349,7 @@ export default function AuthPage({ forceView }: AuthPageProps = {}) {
                   </button>
                 </form>
 
-                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <button
                     type="button"
                     className="auth-link-btn"
@@ -357,6 +357,27 @@ export default function AuthPage({ forceView }: AuthPageProps = {}) {
                     style={{ fontSize: '13px', color: 'var(--accent-cyan)', fontWeight: 600 }}
                   >
                     {language === 'ar' ? ' تفعيل ترخيص / حساب سايبر جديد على هذا الجهاز' : ' Activate new license / cafe account on this device'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="auth-link-btn"
+                    onClick={() => navigate('/download')}
+                    style={{
+                      fontSize: '13px',
+                      color: 'var(--text-secondary)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--accent-cyan)' }}>
+                      download
+                    </span>
+                    <span>
+                      {language === 'ar' ? 'تنزيل تطبيق سطح المكتب (Windows)' : 'Download Desktop App (Windows)'}
+                    </span>
                   </button>
                 </div>
               </>

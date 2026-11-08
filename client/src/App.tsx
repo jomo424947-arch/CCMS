@@ -4,6 +4,7 @@ import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import { UpdateNotification } from './components/UpdateNotification';
 
 import AuthPage from './pages/AuthPage';
+import DownloadPage from './pages/DownloadPage';
 import DashboardPage from './pages/DashboardPage';
 import RoomsPage from './pages/RoomsPage';
 import CafeTablesPage from './pages/CafeTablesPage';
@@ -227,6 +228,9 @@ export default function App() {
           path="/login"
           element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <AuthPage />}
         />
+
+        <Route path="/download" element={<DownloadPage />} />
+        <Route path="/downloads" element={<Navigate to="/download" replace />} />
 
         {/* These routes intentionally render AuthPage — the page itself
             reads ?view=reset or the URL hash to show the correct form. */}
