@@ -1,0 +1,6 @@
+{
+  "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAjRygfUC1qLKygqpSIz5hEq4v+10W2fnzbpgHuOUltcE=\n-----END PUBLIC KEY-----\n",
+  "privateKeyPem": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIPWo7+aljJmmu1RtNlxx9al13o5iBnLUFqWLFfKgRxhQ\n-----END PRIVATE KEY-----\n",
+  "publicKeyBase64": "MCowBQYDK2VwAyEAjRygfUC1qLKygqpSIz5hEq4v+10W2fnzbpgHuOUltcE=",
+  "fingerprint": "SHA256:01576eb7d4d3189af222d081ab66209e"
+}

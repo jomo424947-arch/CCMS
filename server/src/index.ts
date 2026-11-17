@@ -44,7 +44,7 @@ import crypto from 'crypto';
 
 const app = express();
 app.set('trust proxy', 1);
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.CCMS_PORT || (process.env.PORT && process.env.PORT !== '8080' && process.env.PORT !== '3000' ? process.env.PORT : 5000);
 const origin = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 const allowedOrigins = [origin, 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:5000', 'file://', 'null'];
 
@@ -155,8 +155,10 @@ app.use(errorHandler);
 
 async function ensureInitialDemoSeed() {
   try {
-    const existingUser = sqlQueryOne<{ id: string }>('SELECT id FROM users LIMIT 1');
-    if (existingUser) {
+    const existingDemoAdmin = sqlQueryOne<{ id: string }>(
+      "SELECT id FROM users WHERE email = 'admin@ccms.local' LIMIT 1"
+    );
+    if (existingDemoAdmin) {
       // Also restart simulated agents for any devices that were already paired in demo
       const managedDevices = getDb().exec("SELECT id, tenant_id FROM devices WHERE is_managed = 1 AND agent_status != 'unpaired' AND archived = 0");
       if (managedDevices[0]?.values) {
@@ -185,16 +187,16 @@ async function ensureInitialDemoSeed() {
     const db = getDb();
 
     db.run(
-      `INSERT INTO users (id, email, full_name, role, password_hash, tenant_id, created_at, updated_at, synced)
+      `INSERT OR IGNORE INTO users (id, email, full_name, role, password_hash, tenant_id, created_at, updated_at, synced)
        VALUES (?, ?, ?, 'admin', ?, ?, ?, ?, 1)`,
       [adminId, 'admin@ccms.local', 'Arena Admin', passwordHash, tenantId, nowIso, nowIso]
     );
 
     // Open an active shift so sessions can be started immediately
     db.run(
-      `INSERT INTO shifts (id, user_id, tenant_id, started_at, opening_cash, total_revenue, total_expenses, status, created_at, synced)
+      `INSERT OR IGNORE INTO shifts (id, user_id, tenant_id, started_at, opening_cash, total_revenue, total_expenses, status, created_at, synced)
        VALUES (?, ?, ?, ?, 500, 0, 0, 'active', ?, 1)`,
-      [crypto.randomUUID(), adminId, tenantId, nowIso, nowIso]
+      ['00000000-0000-4000-8000-000000000050', adminId, tenantId, nowIso, nowIso]
     );
 
     // Seed sample devices: 2 managed PCs (online_locked), 1 unmanaged PC (unpaired), 1 PS5 console
@@ -204,25 +206,25 @@ async function ensureInitialDemoSeed() {
     const ps5Id = '00000000-0000-4000-8000-000000000201';
 
     db.run(
-      `INSERT INTO devices (id, name, type, status, specs, hourly_rate, hourly_rate_multi, archived, is_managed, device_number, agent_status, tenant_id, created_at, updated_at)
+      `INSERT OR IGNORE INTO devices (id, name, type, status, specs, hourly_rate, hourly_rate_multi, archived, is_managed, device_number, agent_status, tenant_id, created_at, updated_at)
        VALUES (?, 'PC-01 (RTX 4070)', 'pc', 'available', ?, 40, 40, 0, 1, 1, 'online_locked', ?, ?, ?)`,
       [pc1Id, JSON.stringify({ gpu: 'RTX 4070', ram: '32GB', monitor: '240Hz' }), tenantId, nowIso, nowIso]
     );
 
     db.run(
-      `INSERT INTO devices (id, name, type, status, specs, hourly_rate, hourly_rate_multi, archived, is_managed, device_number, agent_status, tenant_id, created_at, updated_at)
+      `INSERT OR IGNORE INTO devices (id, name, type, status, specs, hourly_rate, hourly_rate_multi, archived, is_managed, device_number, agent_status, tenant_id, created_at, updated_at)
        VALUES (?, 'PC-02 (RTX 4070)', 'pc', 'available', ?, 40, 40, 0, 1, 2, 'online_locked', ?, ?, ?)`,
       [pc2Id, JSON.stringify({ gpu: 'RTX 4070', ram: '32GB', monitor: '240Hz' }), tenantId, nowIso, nowIso]
     );
 
     db.run(
-      `INSERT INTO devices (id, name, type, status, specs, hourly_rate, hourly_rate_multi, archived, is_managed, device_number, agent_status, tenant_id, created_at, updated_at)
+      `INSERT OR IGNORE INTO devices (id, name, type, status, specs, hourly_rate, hourly_rate_multi, archived, is_managed, device_number, agent_status, tenant_id, created_at, updated_at)
        VALUES (?, 'PC-03 (RTX 4060)', 'pc', 'available', ?, 35, 35, 0, 1, 3, 'unpaired', ?, ?, ?)`,
       [pc3Id, JSON.stringify({ gpu: 'RTX 4060', ram: '16GB', monitor: '165Hz' }), tenantId, nowIso, nowIso]
     );
 
     db.run(
-      `INSERT INTO devices (id, name, type, status, specs, hourly_rate, hourly_rate_multi, archived, is_managed, device_number, agent_status, tenant_id, created_at, updated_at)
+      `INSERT OR IGNORE INTO devices (id, name, type, status, specs, hourly_rate, hourly_rate_multi, archived, is_managed, device_number, agent_status, tenant_id, created_at, updated_at)
        VALUES (?, 'PS5 Lounge 01', 'console', 'available', ?, 60, 90, 0, 0, null, 'unpaired', ?, ?, ?)`,
       [ps5Id, JSON.stringify({ controllers: 4, display: '65" 4K OLED' }), tenantId, nowIso, nowIso]
     );
