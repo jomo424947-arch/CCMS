@@ -28,27 +28,27 @@ const CACHE_KEY = 'ccms_github_latest_release_cache';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
 
 const FALLBACK_RELEASE: LatestReleaseInfo = {
-  version: 'v1.4.6',
-  name: 'CCMS v1.4.6',
+  version: 'v2.0.0',
+  name: 'CCMS v2.0.0 — CyberShield Device Control Edition',
   publishedAt: new Date().toISOString(),
-  body: 'تحديثات الأداء، استقرار قواعد البيانات، وميزات إدارة الصالات وأجهزة الألعاب الحديثة.',
+  body: 'محرك التحكم وإنفاذ قفل الشاشات للأجهزة (Ed25519)، المزامنة السحابية الفورية مع Supabase، وتحديث الهوية البصرية الجديدة.',
   htmlUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`,
-  installerUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/v1.4.6/CCMS-Setup-1.4.6.exe`,
-  installerName: 'CCMS-Setup-1.4.6.exe',
-  installerSize: 85 * 1024 * 1024,
+  installerUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/v2.0.0/CCMS-Setup-2.0.0.exe`,
+  installerName: 'CCMS-Setup-2.0.0.exe',
+  installerSize: 88 * 1024 * 1024,
   assets: [
     {
       id: 1,
-      name: 'CCMS-Setup-1.4.6.exe',
-      size: 85 * 1024 * 1024,
+      name: 'CCMS-Setup-2.0.0.exe',
+      size: 88 * 1024 * 1024,
       downloadCount: 0,
-      downloadUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/v1.4.6/CCMS-Setup-1.4.6.exe`,
+      downloadUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/v2.0.0/CCMS-Setup-2.0.0.exe`,
       contentType: 'application/octet-stream',
       updatedAt: new Date().toISOString(),
     },
   ],
-  zipUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/v1.4.6.zip`,
-  tarUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/v1.4.6.tar.gz`,
+  zipUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/v2.0.0.zip`,
+  tarUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/v2.0.0.tar.gz`,
 };
 
 export async function fetchLatestRelease(): Promise<LatestReleaseInfo> {

@@ -11,6 +11,8 @@ import {
   toggleSimulatedAgent,
   sendBulkDeviceCommand,
   listDeviceAuditLogs,
+  getCloudSyncStatus,
+  triggerCloudSyncNow,
 } from '../controllers/agent.controller';
 import {
   generatePairingCodeSchema,
@@ -31,6 +33,8 @@ router.post('/pair', validate(agentPairRequestSchema), asyncHandler(pairAgentDev
 // Authenticated Dashboard & Cashier endpoints
 router.use(verifyJWT);
 
+router.get('/cloud-status', asyncHandler(getCloudSyncStatus));
+router.post('/cloud-sync', asyncHandler(triggerCloudSyncNow));
 router.get('/telemetry', asyncHandler(listAgentTelemetry));
 router.post('/pairing-code', validate(generatePairingCodeSchema), asyncHandler(createPairingCode));
 router.post('/bulk-command', validate(bulkDeviceCommandSchema), asyncHandler(sendBulkDeviceCommand));

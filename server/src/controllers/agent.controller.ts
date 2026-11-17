@@ -15,13 +15,15 @@ import {
 } from '../lib/agent-control.service';
 import { getControllerDiscoveryMetadata } from '../lib/udp-discovery';
 import { getActiveTenantConfig } from '../lib/database';
+import { cloudSupabase } from '../lib/cloud-supabase';
+import { runSync } from '../lib/sync-engine';
 
 /**
  * GET /api/agent/discover
  * Public LAN discovery endpoint for Windows Agents.
  */
 export async function discoverController(_req: Request, res: Response) {
-  const port = Number(process.env.PORT || 5000);
+  const port = Number(process.env.CCMS_PORT || (process.env.PORT && process.env.PORT !== '8080' && process.env.PORT !== '3000' ? process.env.PORT : 5000));
   const metadata = getControllerDiscoveryMetadata(port);
   res.json({ data: metadata });
 }
@@ -589,4 +591,80 @@ function safeJsonParse(str: string): Record<string, unknown> {
   } catch {
     return {};
   }
+}
+
+/**
+ * GET /api/agent/cloud-status
+ * Checks live Supabase Cloud Database connectivity, pending sync queue items, and synced table counts.
+ */
+export async function getCloudSyncStatus(req: Request, res: Response) {
+  const tenantId = req.user!.tenant_id;
+  const initialPending = sqlQueryOne<{ cnt: number }>(
+    'SELECT COUNT(*) as cnt FROM sync_queue WHERE synced = 0'
+  );
+  if (cloudSupabase && Number(initialPending?.cnt ?? 0) > 0) {
+    try {
+      await runSync();
+    } catch {
+      // Non-fatal
+    }
+  }
+  const pendingRow = sqlQueryOne<{ cnt: number }>(
+    'SELECT COUNT(*) as cnt FROM sync_queue WHERE synced = 0'
+  );
+  const failedRow = sqlQueryOne<{ cnt: number }>(
+    'SELECT COUNT(*) as cnt FROM sync_queue WHERE synced = 2'
+  );
+  const pendingQueueCount = Number(pendingRow?.cnt ?? 0);
+  const failedQueueCount = Number(failedRow?.cnt ?? 0);
+
+  let cloudConnected = false;
+  let cloudUrl = process.env.SUPABASE_URL || '';
+  let cloudCounts = {
+    devices: 0,
+    sessions: 0,
+    commands: 0,
+    audit_logs: 0,
+  };
+
+  if (cloudSupabase) {
+    try {
+      const [devRes, sessRes, cmdRes, audRes] = await Promise.all([
+        cloudSupabase.from('devices').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+        cloudSupabase.from('sessions').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+        cloudSupabase.from('device_commands').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+        cloudSupabase.from('device_audit_log').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+      ]);
+      if (!devRes.error) {
+        cloudConnected = true;
+        cloudCounts = {
+          devices: devRes.count ?? 0,
+          sessions: sessRes.count ?? 0,
+          commands: cmdRes.count ?? 0,
+          audit_logs: audRes.count ?? 0,
+        };
+      }
+    } catch {
+      cloudConnected = false;
+    }
+  }
+
+  res.json({
+    data: {
+      server_version: '2.0.0',
+      agent_version: '2.0.0-win64',
+      cloud_configured: Boolean(cloudSupabase),
+      cloud_connected: cloudConnected,
+      cloud_url: cloudUrl,
+      pending_sync_items: pendingQueueCount,
+      failed_sync_items: failedQueueCount,
+      cloud_counts: cloudCounts,
+      checked_at: new Date().toISOString(),
+    },
+  });
+}
+
+export async function triggerCloudSyncNow(req: Request, res: Response) {
+  await runSync();
+  return getCloudSyncStatus(req, res);
 }

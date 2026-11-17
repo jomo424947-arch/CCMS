@@ -71,55 +71,96 @@ export function Sidebar() {
         {/* Logo Section */}
         <div
           style={{
-            padding: '32px 28px 24px 28px',
+            padding: '24px 22px 20px 22px',
             display: 'flex',
             alignItems: 'center',
             gap: '14px',
+            borderBottom: '1px solid var(--border-default)',
+            background: 'linear-gradient(180deg, rgba(0, 229, 255, 0.06) 0%, transparent 100%)',
           }}
         >
-          {systemLogoUrl ? (
+          <div
+            style={{
+              position: 'relative',
+              width: '46px',
+              height: '46px',
+              borderRadius: '12px',
+              padding: '2px',
+              background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.45), rgba(99, 102, 241, 0.45))',
+              boxShadow: '0 0 18px rgba(0, 229, 255, 0.22)',
+              flexShrink: 0,
+            }}
+          >
             <img
-              src={systemLogoUrl}
-              alt="Cyber Logo"
+              src={systemLogoUrl || './ccms-logo.svg'}
+              alt="CCMS CyberShield Logo"
               style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '8px',
+                width: '100%',
+                height: '100%',
+                borderRadius: '10px',
                 objectFit: 'contain',
-                background: 'rgba(0, 194, 255, 0.1)',
-                border: '1px solid rgba(0, 194, 255, 0.3)',
+                background: '#060911',
               }}
             />
-          ) : null}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span
-              style={{
-                fontFamily: 'Space Grotesk, sans-serif',
-                fontSize: '24px',
-                fontWeight: 700,
-                color: '#00C2FF',
-                letterSpacing: '-0.02em',
-                lineHeight: '1.2',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: '180px',
-              }}
-            >
-              {systemName || 'CCMS'}
-            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span
+                style={{
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  fontSize: '21px',
+                  fontWeight: 800,
+                  background: 'linear-gradient(90deg, #FFFFFF 0%, #00E5FF 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  letterSpacing: '-0.02em',
+                  lineHeight: '1.15',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '125px',
+                }}
+              >
+                {systemName || 'CCMS'}
+              </span>
+              <span
+                style={{
+                  fontSize: '9px',
+                  fontWeight: 800,
+                  fontFamily: 'JetBrains Mono, monospace',
+                  padding: '2px 5px',
+                  borderRadius: '4px',
+                  background: 'rgba(0, 229, 255, 0.14)',
+                  border: '1px solid rgba(0, 229, 255, 0.35)',
+                  color: 'var(--accent-cyan)',
+                }}
+              >
+                v2.0
+              </span>
+            </div>
             <span
               style={{
                 fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: '#A1A1AA',
+                fontSize: '10px',
+                fontWeight: 700,
+                color: 'var(--text-secondary)',
                 textTransform: 'uppercase',
-                opacity: 0.5,
-                letterSpacing: '0.1em',
-                marginTop: '2px',
+                letterSpacing: '0.08em',
+                marginTop: '3px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
               }}
             >
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: 'var(--accent-green)',
+                  boxShadow: '0 0 8px var(--accent-green)',
+                }}
+              />
               {t('admin_terminal')}
             </span>
           </div>

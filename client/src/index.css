@@ -9,34 +9,34 @@
    ============================================================================ */
 :root,
 [data-theme="dark"] {
-  --bg-base: #0A0A0A; /* Deepest background — page canvas */
-  --bg-surface: #111111; /* Cards, panels, sidebars */
-  --bg-elevated: #181818; /* Hover states, modals, dropdowns */
-  --bg-input: #0A0A0A; /* Form fields */
+  --bg-base: #060911; /* Deepest obsidian carbon canvas */
+  --bg-surface: #0C111E; /* Tactical slate cards, panels, sidebars */
+  --bg-elevated: #131B2E; /* Hover states, modals, dropdowns */
+  --bg-input: #080C17; /* Form fields */
 
-  --accent-cyan: #00C2FF; /* Primary accent — active states, CTAs */
-  --accent-cyan-dim: rgba(0, 194, 255, 0.1);
-  --accent-orange: #FF7A00; /* Subtle cyan glow backgrounds */
-  --accent-green: #22C55E; /* Success, available status */
-  --accent-yellow: #F59E0B; /* Warning, reserved status */
-  --accent-red: #EF4444; /* Danger, in-use / error states */
-  --accent-purple: #8B5CF6; /* Secondary accent — graphs, tags */
+  --accent-cyan: #00E5FF; /* Electric cyber cyan — active states, CTAs */
+  --accent-cyan-dim: rgba(0, 229, 255, 0.12);
+  --accent-orange: #FF7A00;
+  --accent-green: #10B981; /* Emerald online status */
+  --accent-yellow: #F59E0B; /* Amber warning / reserved status */
+  --accent-red: #EF4444; /* Crimson danger / lock alert */
+  --accent-purple: #6366F1; /* Plasma indigo secondary accent */
 
-  --text-primary: #FFFFFF; /* Main readable text (text-high) */
-  --text-secondary: #A1A1AA; /* Subtitles, labels, timestamps (text-medium) */
-  --text-muted: #71717A; /* Disabled, placeholder (text-disabled) */
-  --text-accent: #92d9ff; /* Highlighted text, links (primary) */
+  --text-primary: #F8FAFC; /* Crisp high-contrast text */
+  --text-secondary: #94A3B8; /* Subtitles, labels, timestamps */
+  --text-muted: #64748B; /* Muted / placeholder text */
+  --text-accent: #7DD3FC; /* Highlighted text, links */
 
-  --border-default: rgba(255, 255, 255, 0.1); /* Subtle borders */
-  --border-glow: rgba(0, 194, 255, 0.3); /* Glowing borders on focus/active */
+  --border-default: rgba(148, 163, 184, 0.12); /* Precision slate border */
+  --border-glow: rgba(0, 229, 255, 0.35); /* Glowing borders on focus/active */
 
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 15px rgba(0, 194, 255, 0.2);
-  --shadow-glow-strong: 0 0 25px rgba(0, 194, 255, 0.4);
+  --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 0 18px rgba(0, 229, 255, 0.22);
+  --shadow-glow-strong: 0 0 32px rgba(0, 229, 255, 0.42);
 
-  --header-bg: rgba(19, 19, 19, 0.85);
+  --header-bg: rgba(12, 17, 30, 0.85);
 
-  --sidebar-width: 240px;
+  --sidebar-width: 248px;
 
   /* Precision visual scaling multipliers */
   --font-scale: 1;

@@ -514,8 +514,14 @@ class AgentControlService {
   ): void {
     const nowIso = new Date().toISOString();
     sqlRun(
-      'UPDATE devices SET agent_status = ?, last_seen_at = COALESCE(?, last_seen_at), last_ip = COALESCE(?, last_ip), updated_at = ? WHERE id = ? AND tenant_id = ?',
+      'UPDATE devices SET agent_status = ?, last_seen_at = COALESCE(?, last_seen_at), last_ip = COALESCE(?, last_ip), updated_at = ?, synced = 0 WHERE id = ? AND tenant_id = ?',
       [status, nowIso, ipAddress || null, nowIso, deviceId, tenantId]
+    );
+    sqlRun(
+      `INSERT INTO sync_queue (table_name, record_id, operation, created_at, synced)
+       SELECT 'devices', ?, 'UPDATE', ?, 0
+       WHERE NOT EXISTS (SELECT 1 FROM sync_queue WHERE table_name = 'devices' AND record_id = ? AND synced = 0)`,
+      [deviceId, nowIso, deviceId]
     );
 
     const existing = this.telemetryMap.get(deviceId);
@@ -594,17 +600,26 @@ class AgentControlService {
     }
 
     const nowIso = new Date().toISOString();
+    const dbCommandType =
+      envelope.command_type === 'ADMIN_MAINTENANCE_UNLOCK'
+        ? envelope.payload?.enabled !== false
+          ? 'ENTER_MAINTENANCE'
+          : 'EXIT_MAINTENANCE'
+        : envelope.command_type === 'AGENT_UNPAIR_UNLOCK'
+        ? 'REVOKE_CREDENTIAL'
+        : envelope.command_type;
+
     sqlRun(
       `INSERT INTO device_commands (
         id, tenant_id, device_id, session_id, command_type, params_json,
-        status, issued_by, issued_at, ack_at, completed_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        status, issued_by, issued_at, ack_at, completed_at, synced
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
       [
         envelope.command_id,
         envelope.tenant_id,
         envelope.device_id,
         params.sessionId || null,
-        envelope.command_type,
+        dbCommandType,
         JSON.stringify({
           sequence_number: envelope.sequence_number,
           signature: envelope.signature,
@@ -617,6 +632,11 @@ class AgentControlService {
         initialStatus === 'succeeded' ? nowIso : null,
         initialStatus === 'succeeded' ? nowIso : null,
       ]
+    );
+    sqlRun(
+      `INSERT INTO sync_queue (table_name, record_id, operation, created_at, synced)
+       VALUES ('device_commands', ?, 'INSERT', ?, 0)`,
+      [envelope.command_id, nowIso]
     );
 
     this.logAuditEvent({
@@ -764,18 +784,25 @@ class AgentControlService {
     actorUserId?: string | null;
     details?: Record<string, unknown>;
   }): void {
+    const auditId = crypto.randomUUID();
+    const nowIso = new Date().toISOString();
     sqlRun(
-      `INSERT INTO device_audit_log (id, tenant_id, device_id, actor_id, event_type, details, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO device_audit_log (id, tenant_id, device_id, actor_id, event_type, details, created_at, synced)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
       [
-        crypto.randomUUID(),
+        auditId,
         params.tenantId,
         params.deviceId,
         params.actorUserId || null,
         params.eventType,
         JSON.stringify(params.details || {}),
-        new Date().toISOString(),
+        nowIso,
       ]
+    );
+    sqlRun(
+      `INSERT INTO sync_queue (table_name, record_id, operation, created_at, synced)
+       VALUES ('device_audit_log', ?, 'INSERT', ?, 0)`,
+      [auditId, nowIso]
     );
   }
 
@@ -897,7 +924,8 @@ class AgentControlService {
            agent_token = ?,
            last_seen_at = ?,
            last_ip = ?,
-           updated_at = ?
+           updated_at = ?,
+           synced = 0
        WHERE id = ? AND tenant_id = ?`,
       [
         initialStatus,
@@ -910,6 +938,12 @@ class AgentControlService {
         deviceId,
         tenantId,
       ]
+    );
+    sqlRun(
+      `INSERT INTO sync_queue (table_name, record_id, operation, created_at, synced)
+       SELECT 'devices', ?, 'UPDATE', ?, 0
+       WHERE NOT EXISTS (SELECT 1 FROM sync_queue WHERE table_name = 'devices' AND record_id = ? AND synced = 0)`,
+      [deviceId, nowIso, deviceId]
     );
 
     const instance: SimulatedAgentInstance = {

@@ -5,11 +5,11 @@ import path from 'path';
 import WebSocket from 'ws';
 
 // Load env variables
-dotenv.config();
-dotenv.config({ path: path.join(__dirname, '.env') }); // same directory
-dotenv.config({ path: path.join(__dirname, '../.env') }); // parent directory (server/.env or electron/server/.env)
-dotenv.config({ path: path.join(__dirname, '../../.env') }); // server/dist/lib/.env
-dotenv.config({ path: path.join(__dirname, '../../../.env') });
+dotenv.config({ override: true });
+dotenv.config({ path: path.join(__dirname, '.env'), override: true }); // same directory
+dotenv.config({ path: path.join(__dirname, '../.env'), override: true }); // parent directory (server/.env or electron/server/.env)
+dotenv.config({ path: path.join(__dirname, '../../.env'), override: true }); // server/dist/lib/.env
+dotenv.config({ path: path.join(__dirname, '../../../.env'), override: true });
 
 const isOffline = process.env.OFFLINE_MODE === 'true';
 

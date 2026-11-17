@@ -561,4 +561,15 @@ export const realService: DataService = {
     >(`/api/agent/devices/${deviceId}/audit-logs`);
     return data.data;
   },
+
+  async getCloudSyncStatus() {
+    const { data } = await http.get<OneWrap<any>>('/api/agent/cloud-status');
+    return data.data;
+  },
+
+  async triggerCloudSyncNow() {
+    const { data } = await http.post<OneWrap<any>>('/api/agent/cloud-sync');
+    return data.data;
+  },
 };
+

@@ -279,21 +279,62 @@ export default function AuthPage({ forceView }: AuthPageProps = {}) {
             {/* ── Login ── */}
             {view === 'login' && (
               <>
-                {systemLogoUrl || (systemName && systemName !== 'CCMS') ? (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '16px' }}>
-                    {systemLogoUrl && (
-                      <img src={systemLogoUrl} alt="Logo" style={{ width: '42px', height: '42px', borderRadius: '10px', objectFit: 'contain' }} />
-                    )}
-                    {systemName && systemName !== 'CCMS' && (
-                      <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-cyan)', fontFamily: 'Space Grotesk, sans-serif' }}>
-                        {systemName}
-                      </span>
-                    )}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
+                  <div
+                    style={{
+                      width: '68px',
+                      height: '68px',
+                      borderRadius: '18px',
+                      padding: '3px',
+                      background: 'linear-gradient(135deg, #00E5FF 0%, #6366F1 100%)',
+                      boxShadow: '0 0 28px rgba(0, 229, 255, 0.3)',
+                      marginBottom: '12px',
+                    }}
+                  >
+                    <img
+                      src={systemLogoUrl || './ccms-logo.svg'}
+                      alt="Logo"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '15px',
+                        objectFit: 'contain',
+                        background: '#060911',
+                      }}
+                    />
                   </div>
-                ) : null}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: 800,
+                        background: 'linear-gradient(90deg, #FFFFFF 0%, #00E5FF 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        fontFamily: 'Space Grotesk, sans-serif',
+                      }}
+                    >
+                      {systemName || 'CCMS'}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        fontFamily: 'JetBrains Mono, monospace',
+                        padding: '2px 7px',
+                        borderRadius: '999px',
+                        background: 'rgba(0, 229, 255, 0.14)',
+                        border: '1px solid rgba(0, 229, 255, 0.35)',
+                        color: 'var(--accent-cyan)',
+                      }}
+                    >
+                      v2.0 CYBERSHIELD
+                    </span>
+                  </div>
+                </div>
 
-                <h2 className="auth-form-title">{t('sign_in_title')}</h2>
-                <p className="auth-form-subtitle">{t('sign_in_subtitle')}</p>
+                <h2 className="auth-form-title" style={{ textAlign: 'center' }}>{t('sign_in_title')}</h2>
+                <p className="auth-form-subtitle" style={{ textAlign: 'center' }}>{t('sign_in_subtitle')}</p>
 
                 <form onSubmit={handleLogin} className="auth-form" noValidate>
                   <Field label={t('employee_email')}>

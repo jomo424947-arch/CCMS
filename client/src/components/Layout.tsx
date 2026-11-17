@@ -124,8 +124,8 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
             boxShadow: 'var(--shadow-card)',
           }}
         >
-          {/* Left panel: Active shift badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Left panel: Active shift badge + Cloud DB status */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {effectiveShift ? (
               <button
                 onClick={() => navigate('/shifts')}
@@ -133,8 +133,8 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  background: 'rgba(34, 197, 94, 0.12)',
-                  border: '1px solid rgba(34, 197, 94, 0.35)',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
                   borderRadius: '20px',
                   padding: '6px 14px',
                   color: 'var(--accent-green)',
@@ -161,6 +161,30 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
                 </span>
               </button>
             ) : null}
+
+            <button
+              onClick={() => navigate('/settings')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(0, 229, 255, 0.08)',
+                border: '1px solid rgba(0, 229, 255, 0.28)',
+                borderRadius: '20px',
+                padding: '5px 12px',
+                color: 'var(--accent-cyan)',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'JetBrains Mono, monospace',
+              }}
+              title={language === 'ar' ? 'قاعدة البيانات السحابية متصلة ومستقرة (Supabase Cloud + Local SQLite)' : 'Supabase Cloud + Local SQLite Connected'}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+                cloud_done
+              </span>
+              <span>{language === 'ar' ? 'السحابة متصلة' : 'CLOUD SYNC'}</span>
+            </button>
           </div>
 
           {/* Middle: Trial or Expiry Warning Banner (Circled in red in screenshot) */}

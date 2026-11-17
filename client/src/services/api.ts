@@ -209,4 +209,37 @@ export interface DataService {
     audit_logs: DeviceAuditLogEntry[];
     commands: DeviceCommandRecord[];
   }>;
+  getCloudSyncStatus(): Promise<{
+    server_version: string;
+    agent_version: string;
+    cloud_configured: boolean;
+    cloud_connected: boolean;
+    cloud_url: string;
+    pending_sync_items: number;
+    failed_sync_items: number;
+    cloud_counts: {
+      devices: number;
+      sessions: number;
+      commands: number;
+      audit_logs: number;
+    };
+    checked_at: string;
+  }>;
+  triggerCloudSyncNow(): Promise<{
+    server_version: string;
+    agent_version: string;
+    cloud_configured: boolean;
+    cloud_connected: boolean;
+    cloud_url: string;
+    pending_sync_items: number;
+    failed_sync_items: number;
+    cloud_counts: {
+      devices: number;
+      sessions: number;
+      commands: number;
+      audit_logs: number;
+    };
+    checked_at: string;
+  }>;
 }
+

@@ -37,6 +37,25 @@ async function verifySubscription(): Promise<void> {
       if (tenant.status !== 'active' && tenant.status !== 'trial') {
         console.warn(`[sync] Tenant subscription is ${tenant.status}. Application locked.`);
       }
+    } else {
+      // Ensure local tenant exists in cloud so foreign key references succeed
+      const localCfg = db.exec(
+        'SELECT tenant_id, tenant_name, owner_email, status, plan, expires_at, max_managed_devices, device_control_enabled FROM tenant_config WHERE tenant_id = ? LIMIT 1',
+        [localTenantId]
+      );
+      const row = localCfg[0]?.values?.[0];
+      if (row) {
+        await cloudSupabase.from('tenants').upsert({
+          id: String(row[0]),
+          name: String(row[1] || 'CCMS Esports Arena'),
+          owner_email: String(row[2] || 'admin@ccms.local'),
+          status: String(row[3] || 'active'),
+          plan: String(row[4] || 'annual_full'),
+          expires_at: row[5] ? String(row[5]) : null,
+          max_managed_devices: Number(row[6] ?? 50),
+          device_control_enabled: Boolean(row[7] ?? 1),
+        });
+      }
     }
   } catch (err: any) {
     console.error('[sync] Failed to verify subscription status:', err.message);
@@ -950,6 +969,7 @@ export async function runSync(): Promise<void> {
       'session_pauses',
       'product_stock_logs',
       'monthly_closings',
+      'device_commands',
       'device_audit_log',
     ]);
 
@@ -974,8 +994,29 @@ export async function runSync(): Promise<void> {
       reservations: 16,
       session_audit_log: 17,
       monthly_closings: 18,
-      device_audit_log: 19,
+      device_commands: 19,
+      device_audit_log: 20,
     };
+
+    // Ensure any local rows with synced = 0 (or initial seeded rows) are present in sync_queue
+    for (const autoTable of ['users', 'devices', 'rooms', 'products', 'customers', 'shifts', 'sessions', 'invoices', 'device_commands', 'device_audit_log']) {
+      try {
+        db.run(
+          `INSERT INTO sync_queue (table_name, record_id, operation, created_at, synced)
+           SELECT '${autoTable}', t.id, 'INSERT', datetime('now'), 0
+           FROM "${autoTable}" t
+           WHERE t.tenant_id = ?
+             AND (t.synced = 0 OR t.synced_at IS NULL)
+             AND NOT EXISTS (
+               SELECT 1 FROM sync_queue q
+               WHERE q.table_name = '${autoTable}' AND q.record_id = t.id AND q.synced = 0
+             )`,
+          [tenantId]
+        );
+      } catch {
+        // Ignore if table lacks column
+      }
+    }
 
     // Get unsynced queue items
     const stmt = db.prepare('SELECT * FROM sync_queue WHERE synced = 0 ORDER BY id ASC LIMIT 100');

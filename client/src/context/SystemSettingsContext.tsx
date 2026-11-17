@@ -18,7 +18,7 @@ const STORAGE_WALLET_PHONE_KEY = 'ccms_wallet_phone';
 const STORAGE_BANK_DETAILS_KEY = 'ccms_bank_details';
 
 const DEFAULT_SYSTEM_NAME = 'CCMS';
-const DEFAULT_SYSTEM_LOGO = './logo.png';
+const DEFAULT_SYSTEM_LOGO = './ccms-logo.svg';
 
 const SystemSettingsContext = createContext<SystemSettingsContextType | undefined>(undefined);
 
@@ -28,7 +28,11 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
   });
 
   const [systemLogoUrl, setSystemLogoUrl] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_LOGO_KEY) || DEFAULT_SYSTEM_LOGO;
+    const saved = localStorage.getItem(STORAGE_LOGO_KEY);
+    if (!saved || saved === './logo.png' || saved === '/logo.png') {
+      return DEFAULT_SYSTEM_LOGO;
+    }
+    return saved;
   });
 
   const [walletQrUrl, setWalletQrUrl] = useState<string>(() => {

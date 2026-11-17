@@ -2,10 +2,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 // Load env variables from multiple locations to handle different execution cwd environments
-dotenv.config(); // CWD
-dotenv.config({ path: path.join(__dirname, '.env') }); // same directory (for packaged Electron)
-dotenv.config({ path: path.join(__dirname, '../.env') }); // server/.env
-dotenv.config({ path: path.join(__dirname, '../../.env') }); // workspace root/.env
+dotenv.config({ override: true }); // CWD
+dotenv.config({ path: path.join(__dirname, '.env'), override: true }); // same directory (for packaged Electron)
+dotenv.config({ path: path.join(__dirname, '../.env'), override: true }); // server/.env
+dotenv.config({ path: path.join(__dirname, '../../.env'), override: true }); // workspace root/.env
 
 import express from 'express';
 import cors from 'cors';
