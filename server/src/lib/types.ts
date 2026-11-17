@@ -13,6 +13,37 @@ export interface DbUser {
 
 export type DeviceType = 'pc' | 'console' | 'vr' | 'table';
 export type DeviceStatus = 'available' | 'in_use' | 'reserved' | 'offline';
+export type AgentStatus =
+  | 'unpaired'
+  | 'online_locked'
+  | 'online_in_session'
+  | 'offline'
+  | 'maintenance'
+  | 'revoked';
+
+export type DeviceCommandType =
+  | 'SESSION_START_UNLOCK'
+  | 'SESSION_UPDATE_TIME'
+  | 'SESSION_PAUSE_LOCK'
+  | 'SESSION_RESUME_UNLOCK'
+  | 'SESSION_END_LOCK'
+  | 'DISPLAY_MESSAGE'
+  | 'SYSTEM_RESTART'
+  | 'SYSTEM_SHUTDOWN'
+  | 'ADMIN_MAINTENANCE_UNLOCK'
+  | 'AGENT_UNPAIR_UNLOCK'
+  | 'ENTER_MAINTENANCE'
+  | 'EXIT_MAINTENANCE'
+  | 'REVOKE_CREDENTIAL';
+
+export type DeviceCommandStatus =
+  | 'queued'
+  | 'sent'
+  | 'received'
+  | 'executing'
+  | 'succeeded'
+  | 'failed'
+  | 'expired';
 
 export interface DbDevice {
   id: string;
@@ -22,8 +53,74 @@ export interface DbDevice {
   specs: Record<string, unknown> | null;
   hourly_rate: number;
   hourly_rate_multi: number;
+  is_managed?: boolean;
+  device_number?: number | null;
+  agent_status?: AgentStatus;
+  agent_version?: string | null;
+  hardware_fingerprint?: string | null;
+  agent_public_key?: string | null;
+  last_seen_at?: string | null;
+  last_ip?: string | null;
+  telemetry?: AgentTelemetry | null;
+  is_simulated?: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface CommandEnvelope {
+  version: string;
+  command_id: string;
+  sequence_number: number;
+  device_id: string;
+  tenant_id: string;
+  issued_at: string;
+  expires_at: string;
+  command_type: DeviceCommandType;
+  payload: Record<string, unknown>;
+  signature: string;
+}
+
+export interface AgentTelemetry {
+  device_id: string;
+  agent_status: AgentStatus;
+  cpu_percent: number;
+  ram_percent: number;
+  uptime_seconds: number;
+  active_window_title: string | null;
+  active_session_id: string | null;
+  last_seen_at: string;
+  last_ip: string | null;
+  agent_version: string;
+  is_simulated?: boolean;
+  last_message?: string | null;
+}
+
+export interface DbDeviceCommand {
+  id: string;
+  tenant_id: string;
+  device_id: string;
+  session_id: string | null;
+  command_type: DeviceCommandType;
+  params_json: Record<string, unknown> | string | null;
+  status: DeviceCommandStatus;
+  error_message: string | null;
+  issued_by: string | null;
+  issued_at: string;
+  ack_at: string | null;
+  completed_at: string | null;
+}
+
+export interface DbDeviceAuditLog {
+  id: string;
+  tenant_id: string;
+  device_id: string;
+  actor_id: string | null;
+  event_type: string;
+  details: Record<string, unknown> | string | null;
+  created_at: string;
+  actor?: {
+    full_name: string | null;
+  };
 }
 
 export interface DbCustomer {

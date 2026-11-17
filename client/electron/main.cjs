@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Tray, Menu } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
@@ -12,6 +12,8 @@ if (!gotTheLock) {
 }
 
 let mainWindow = null;
+let tray = null;
+let isQuitting = false;
 const logPath = path.join(app.getPath('userData'), 'ccms-error.log');
 
 const origConsoleLog = console.log;
@@ -263,10 +265,63 @@ function createWindow() {
 
   loadApp();
 
+  // Minimize to System Tray instead of killing the embedded WebSocket Control Plane
+  mainWindow.on('close', (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
+
+function createSystemTray() {
+  if (tray) return;
+  try {
+    const iconPath = fs.existsSync(path.join(__dirname, 'icon.png'))
+      ? path.join(__dirname, 'icon.png')
+      : path.join(__dirname, '..', 'build', 'icon.ico');
+    tray = new Tray(iconPath);
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'فتح لوحة تحكم CCMS',
+        click: () => {
+          if (mainWindow) {
+            mainWindow.show();
+            mainWindow.focus();
+          } else {
+            createWindow();
+          }
+        },
+      },
+      { type: 'separator' },
+      {
+        label: 'إنهاء النظام بالكامل (Quit)',
+        click: () => {
+          isQuitting = true;
+          app.quit();
+        },
+      },
+    ]);
+    tray.setToolTip('CCMS — Gaming Lounge & Device Control Plane (Running)');
+    tray.setContextMenu(contextMenu);
+    tray.on('double-click', () => {
+      if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    });
+  } catch (err) {
+    logError('Failed to initialize System Tray', err);
+  }
+}
+
+app.on('before-quit', () => {
+  isQuitting = true;
+});
 
 app.on('second-instance', () => {
   if (mainWindow) {
@@ -278,17 +333,20 @@ app.on('second-instance', () => {
 
 app.whenReady().then(() => {
   createWindow();
+  createSystemTray();
   setupAutoUpdater();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
+    } else if (mainWindow) {
+      mainWindow.show();
     }
   });
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' && isQuitting) {
     app.quit();
   }
 });

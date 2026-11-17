@@ -30,6 +30,11 @@ import type {
   MonthlyClosingItem,
   MonthlyFinancialDetails,
   MonthlyClosingRecord,
+  AgentTelemetry,
+  AgentPairingCodeInfo,
+  DeviceCommandType,
+  DeviceAuditLogEntry,
+  DeviceCommandRecord,
 } from '../../types';
 
 // The backend wraps every list response in { data: [...] }.
@@ -479,5 +484,81 @@ export const realService: DataService = {
       { reason }
     );
     return data;
+  },
+
+  // ─── Agent Control Plane ─────────────────────────────────────────────────
+
+  async generateAgentPairingCode(deviceId = null, ttlMinutes = 15) {
+    const { data } = await http.post<OneWrap<AgentPairingCodeInfo>>('/api/agent/pairing-code', {
+      device_id: deviceId,
+      ttl_minutes: ttlMinutes,
+    });
+    return data.data;
+  },
+
+  async listAgentTelemetry() {
+    const { data } = await http.get<OneWrap<{ telemetry: AgentTelemetry[]; server_public_key_fingerprint: string }>>('/api/agent/telemetry');
+    return data.data;
+  },
+
+  async sendDeviceCommand(deviceId, commandType, payload = {}, sessionId = null) {
+    const { data } = await http.post<OneWrap<{ envelope: any; telemetry: AgentTelemetry | null }>>(
+      `/api/agent/devices/${deviceId}/command`,
+      {
+        command_type: commandType,
+        payload,
+        session_id: sessionId,
+      }
+    );
+    return data.data;
+  },
+
+  async sendSafePowerCommand(deviceId, action, activeSessionHandling = 'keep_alive', reason = '') {
+    const { data } = await http.post<
+      OneWrap<{ envelope: any; active_session_id: string | null; active_session_handling: string }>
+    >(`/api/agent/devices/${deviceId}/power`, {
+      action,
+      active_session_handling: activeSessionHandling,
+      reason,
+    });
+    return data.data;
+  },
+
+  async unpairAgentDevice(deviceId) {
+    const { data } = await http.post<OneWrap<{ device_id: string; agent_status: string }>>(
+      `/api/agent/devices/${deviceId}/unpair`,
+      {}
+    );
+    return data.data;
+  },
+
+  async toggleSimulatedAgent(deviceId, enabled) {
+    const { data } = await http.post<
+      OneWrap<{ device_id: string; is_simulated: boolean; telemetry: AgentTelemetry | null }>
+    >(`/api/agent/devices/${deviceId}/simulate`, { enabled });
+    return data.data;
+  },
+
+  async sendBulkDeviceCommand(commandType: DeviceCommandType, payload = {}, deviceIds) {
+    const { data } = await http.post<OneWrap<{ dispatched_count: number; device_ids: string[] }>>(
+      '/api/agent/bulk-command',
+      {
+        command_type: commandType,
+        payload,
+        device_ids: deviceIds,
+      }
+    );
+    return data.data;
+  },
+
+  async listDeviceAuditLogs(deviceId) {
+    const { data } = await http.get<
+      OneWrap<{
+        device: Partial<Device>;
+        audit_logs: DeviceAuditLogEntry[];
+        commands: DeviceCommandRecord[];
+      }>
+    >(`/api/agent/devices/${deviceId}/audit-logs`);
+    return data.data;
   },
 };

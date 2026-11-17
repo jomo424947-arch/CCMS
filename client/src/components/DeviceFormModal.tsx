@@ -139,6 +139,14 @@ export function DeviceFormModal({
   const [specsGames, setSpecsGames] = useState(initialSpecs.games || '');
   const [specsTableSize, setSpecsTableSize] = useState(initialSpecs.table_size || '');
 
+  // Managed Agent states for PC
+  const [isManaged, setIsManaged] = useState<boolean>(
+    initial?.is_managed !== undefined ? Boolean(initial.is_managed) : true
+  );
+  const [deviceNumber, setDeviceNumber] = useState<string>(
+    initial?.device_number ? String(initial.device_number) : ''
+  );
+
   const [loading, setLoading] = useState(false);
   const [pricingTiers, setPricingTiers] = useState<Record<string, { rate: number; rateMulti: number }>>({});
 
@@ -282,12 +290,16 @@ export function DeviceFormModal({
         if (specsControllers) specs.controllers = specsControllers;
       }
 
+      const parsedDevNum = deviceNumber.trim() ? parseInt(deviceNumber.trim(), 10) : null;
+
       const patch: Record<string, unknown> = {
         name: name.trim(),
         type,
         hourly_rate: rate,
         hourly_rate_multi: rateMulti,
         specs: Object.keys(specs).length > 0 ? specs : null,
+        is_managed: type === 'pc' ? isManaged : false,
+        device_number: type === 'pc' && parsedDevNum && !Number.isNaN(parsedDevNum) ? parsedDevNum : null,
       };
 
       await onDone(patch);
@@ -427,6 +439,48 @@ export function DeviceFormModal({
 
         {type === 'pc' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div
+              style={{
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: 'rgba(0, 194, 255, 0.06)',
+                border: '1px solid rgba(0, 194, 255, 0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}
+            >
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#00C2FF' }}>
+                    {isAr ? 'تفعيل نظام الحماية والقفل التلقائي (CCMS Windows Agent)' : 'Enable CCMS Windows Agent Enforcement'}
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                    {isAr
+                      ? 'يقفل شاشة الكمبيوتر تلقائياً ويفتحها فقط عند بدء جلسة من الكاشير'
+                      : 'Automatically locks the PC screen until a session is started'}
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isManaged}
+                  onChange={(e) => setIsManaged(e.target.checked)}
+                  style={{ width: '18px', height: '18px', accentColor: '#00C2FF' }}
+                />
+              </label>
+
+              {isManaged && (
+                <Input
+                  label={isAr ? 'رقم الجهاز التلقائي للربط (Device Number)' : 'Terminal Number (for Auto-Pairing e.g. 1 for PC-01)'}
+                  type="number"
+                  min="1"
+                  placeholder="e.g. 1, 2, 3"
+                  value={deviceNumber}
+                  onChange={(e) => setDeviceNumber(e.target.value)}
+                />
+              )}
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <Input label={isAr ? 'المعالج (CPU)' : 'CPU'} placeholder="e.g. i5-12400F / Ryzen 5" value={specsCpu} onChange={(e) => setSpecsCpu(e.target.value)} />
               <Input label={isAr ? 'كرت الشاشة (GPU)' : 'GPU'} placeholder="e.g. RTX 4060 8GB" value={specsGpu} onChange={(e) => setSpecsGpu(e.target.value)} />

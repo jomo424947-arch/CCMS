@@ -31,6 +31,8 @@ export const createDeviceSchema = z.object({
   hourly_rate: z.number().nonnegative().default(0),
   hourly_rate_multi: z.number().nonnegative().optional(),
   specs: z.record(z.unknown()).optional().nullable(),
+  is_managed: z.boolean().optional().default(false),
+  device_number: z.number().int().positive().optional().nullable(),
 });
 
 export const updateDeviceSchema = z.object({
@@ -40,6 +42,61 @@ export const updateDeviceSchema = z.object({
   hourly_rate: z.number().nonnegative().optional(),
   hourly_rate_multi: z.number().nonnegative().optional(),
   specs: z.record(z.unknown()).optional().nullable(),
+  is_managed: z.boolean().optional(),
+  device_number: z.number().int().positive().optional().nullable(),
+});
+
+export const generatePairingCodeSchema = z.object({
+  device_id: z.string().min(1).optional().nullable(),
+  ttl_minutes: z.number().int().min(1).max(60).optional().default(15),
+});
+
+export const agentPairRequestSchema = z.object({
+  pairing_code: z.string().regex(/^\d{6}$/, 'Pairing code must be a 6-digit number'),
+  device_number: z.number().int().positive().optional().nullable(),
+  device_id: z.string().min(1).optional().nullable(),
+  hostname: z.string().min(1).max(120).optional().default('PC-CLIENT'),
+  hardware_fingerprint: z.string().min(8, 'Hardware fingerprint is required'),
+  agent_public_key: z.string().min(8, 'Agent public key is required'),
+  agent_version: z.string().optional().default('1.0.0'),
+});
+
+export const sendDeviceCommandSchema = z.object({
+  command_type: z.enum([
+    'SESSION_START_UNLOCK',
+    'SESSION_UPDATE_TIME',
+    'SESSION_PAUSE_LOCK',
+    'SESSION_RESUME_UNLOCK',
+    'SESSION_END_LOCK',
+    'DISPLAY_MESSAGE',
+    'SYSTEM_RESTART',
+    'SYSTEM_SHUTDOWN',
+    'ADMIN_MAINTENANCE_UNLOCK',
+    'AGENT_UNPAIR_UNLOCK',
+    'ENTER_MAINTENANCE',
+    'EXIT_MAINTENANCE',
+    'REVOKE_CREDENTIAL',
+  ]),
+  payload: z.record(z.unknown()).optional().default({}),
+  session_id: z.string().optional().nullable(),
+});
+
+export const safePowerCommandSchema = z.object({
+  action: z.enum(['restart', 'shutdown']),
+  active_session_handling: z.enum(['keep_alive', 'end_and_bill']).optional().default('keep_alive'),
+  reason: z.string().max(250).optional(),
+});
+
+export const bulkDeviceCommandSchema = z.object({
+  device_ids: z.array(z.string().min(1)).optional(),
+  command_type: z.enum([
+    'SESSION_END_LOCK',
+    'DISPLAY_MESSAGE',
+    'SYSTEM_RESTART',
+    'SYSTEM_SHUTDOWN',
+    'ADMIN_MAINTENANCE_UNLOCK',
+  ]),
+  payload: z.record(z.unknown()).optional().default({}),
 });
 
 export const startSessionSchema = z.object({

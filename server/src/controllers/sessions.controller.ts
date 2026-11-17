@@ -8,6 +8,7 @@ import type { DbSession } from '../lib/types';
 import { calculateSessionCost, calculateInvoiceAdjustments } from '../lib/billing';
 import { getDb, saveDatabase, setSuppressSave } from '../lib/database';
 import { getActiveShiftForUserOrTenant } from '../lib/shifts.helper';
+import { agentControlService } from '../lib/agent-control.service';
 
 
 /**
@@ -263,6 +264,30 @@ export async function startSession(req: Request, res: Response) {
     .eq('tenant_id', req.user!.tenant_id);
   if (updErr) throw updErr;
 
+  // 8. Dispatch SESSION_START_UNLOCK if managed device
+  try {
+    const durationSec =
+      session_type === 'fixed' && scheduled_end
+        ? Math.max(0, Math.round((new Date(scheduled_end).getTime() - Date.now()) / 1000))
+        : null;
+    agentControlService.sendDeviceCommand({
+      tenantId: req.user!.tenant_id,
+      deviceId: device_id,
+      sessionId: session.id,
+      commandType: 'SESSION_START_UNLOCK',
+      payload: {
+        session_id: session.id,
+        session_type,
+        play_mode,
+        duration_seconds: durationSec,
+        customer_name: (session as any)?.customer?.name || customer_name || 'Walk-in',
+      },
+      issuedByUserId: req.user!.id,
+    });
+  } catch (agentErr: any) {
+    console.warn('[sessions:start] Agent command warning:', agentErr?.message);
+  }
+
   res.status(201).json({ data: session as unknown as DbSession });
   triggerImmediateSync();
 }
@@ -400,6 +425,23 @@ export async function editSession(req: Request, res: Response) {
       }
     }
 
+    if (updates.scheduled_end !== undefined || updates.started_at !== undefined) {
+      try {
+        agentControlService.sendDeviceCommand({
+          tenantId: req.user!.tenant_id,
+          deviceId: updated.device_id,
+          sessionId: updated.id,
+          commandType: 'SESSION_UPDATE_TIME',
+          payload: {
+            session_id: updated.id,
+            scheduled_end: updated.scheduled_end,
+            duration_seconds: agentControlService.calculateRemainingSeconds(updated),
+          },
+          issuedByUserId: req.user!.id,
+        });
+      } catch {}
+    }
+
     res.json({ data: updated as unknown as DbSession });
   } else {
     const { data: current, error: fetchErr } = await supabase
@@ -460,6 +502,22 @@ export async function extendSession(req: Request, res: Response) {
   if (logErr) {
     console.error('[audit] failed to insert extension log:', logErr.message);
   }
+
+  try {
+    agentControlService.sendDeviceCommand({
+      tenantId: req.user!.tenant_id,
+      deviceId: updated.device_id,
+      sessionId: updated.id,
+      commandType: 'SESSION_UPDATE_TIME',
+      payload: {
+        session_id: updated.id,
+        additional_minutes,
+        scheduled_end: updated.scheduled_end,
+        duration_seconds: agentControlService.calculateRemainingSeconds(updated),
+      },
+      issuedByUserId: req.user!.id,
+    });
+  } catch {}
 
   res.json({ data: updated as unknown as DbSession });
 }
@@ -691,6 +749,51 @@ export async function transferSession(req: Request, res: Response) {
     }
     throw err;
   }
+
+  // Dispatch Agent lock to old device and unlock to new device if transferring across devices
+  try {
+    if (!isSameDevice) {
+      agentControlService.sendDeviceCommand({
+        tenantId: req.user!.tenant_id,
+        deviceId: session.device_id,
+        sessionId: id,
+        commandType: 'SESSION_END_LOCK',
+        payload: {
+          reason: 'session_transferred_away',
+          to_device_id: destinationDeviceId,
+        },
+        issuedByUserId: req.user!.id,
+      });
+      agentControlService.sendDeviceCommand({
+        tenantId: req.user!.tenant_id,
+        deviceId: destinationDeviceId,
+        sessionId: id,
+        commandType: 'SESSION_START_UNLOCK',
+        payload: {
+          session_id: id,
+          session_type: updatedSession.session_type,
+          play_mode: updatedSession.play_mode,
+          duration_seconds: agentControlService.calculateRemainingSeconds(updatedSession),
+          transferred_from: session.device_id,
+        },
+        issuedByUserId: req.user!.id,
+      });
+    } else if (isChangingSessionType || isChangingDuration) {
+      agentControlService.sendDeviceCommand({
+        tenantId: req.user!.tenant_id,
+        deviceId: destinationDeviceId,
+        sessionId: id,
+        commandType: 'SESSION_UPDATE_TIME',
+        payload: {
+          session_id: id,
+          session_type: updatedSession.session_type,
+          scheduled_end: updatedSession.scheduled_end,
+          duration_seconds: agentControlService.calculateRemainingSeconds(updatedSession),
+        },
+        issuedByUserId: req.user!.id,
+      });
+    }
+  } catch {}
 
   res.json({
     data: updatedSession as unknown as DbSession,
@@ -1060,6 +1163,22 @@ export async function endSession(req: Request, res: Response) {
     throw err;
   }
 
+  // 7. Dispatch SESSION_END_LOCK to Windows Agent if device is managed
+  try {
+    agentControlService.sendDeviceCommand({
+      tenantId: req.user!.tenant_id,
+      deviceId: session.device_id,
+      sessionId: id,
+      commandType: 'SESSION_END_LOCK',
+      payload: {
+        reason: 'session_ended',
+        total_cost: finalTotalCost,
+        billed_minutes: totalBilledMinutes,
+      },
+      issuedByUserId: req.user!.id,
+    });
+  } catch {}
+
   res.json({
     data: ended as unknown as DbSession,
     invoice,
@@ -1133,7 +1252,6 @@ export async function pauseSession(req: Request, res: Response) {
 
   if (updErr) throw updErr;
 
-  // Reuse the existing audit trail so it shows up in the "Logs" button automatically.
   await supabase.from('session_audit_log').insert({
     session_id: id,
     edited_by: req.user!.id,
@@ -1141,6 +1259,20 @@ export async function pauseSession(req: Request, res: Response) {
     old_value: null,
     new_value: pausedAt.toISOString(),
   });
+
+  try {
+    agentControlService.sendDeviceCommand({
+      tenantId: req.user!.tenant_id,
+      deviceId: updated.device_id,
+      sessionId: id,
+      commandType: 'SESSION_PAUSE_LOCK',
+      payload: {
+        session_id: id,
+        reason: reason || 'Session paused by cashier',
+      },
+      issuedByUserId: req.user!.id,
+    });
+  } catch {}
 
   res.json({ data: updated as unknown as DbSession, pause: pauseRow });
 }
@@ -1201,6 +1333,20 @@ export async function resumeSession(req: Request, res: Response) {
     old_value: openPause.paused_at,
     new_value: resumedAt.toISOString(),
   });
+
+  try {
+    agentControlService.sendDeviceCommand({
+      tenantId: req.user!.tenant_id,
+      deviceId: updated.device_id,
+      sessionId: id,
+      commandType: 'SESSION_RESUME_UNLOCK',
+      payload: {
+        session_id: id,
+        duration_seconds: agentControlService.calculateRemainingSeconds(updated),
+      },
+      issuedByUserId: req.user!.id,
+    });
+  } catch {}
 
   res.json({ data: updated as unknown as DbSession });
 }

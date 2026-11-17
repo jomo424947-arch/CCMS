@@ -30,13 +30,17 @@ import roomRoutes from './routes/rooms.routes';
 import cafeTableRoutes from './routes/cafe-tables.routes';
 import shiftRoutes from './routes/shifts.routes';
 import monthlyClosingsRoutes from './routes/monthly-closings.routes';
+import agentRoutes from './routes/agent.routes';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { supabase } from './lib/supabase';
 import { csrfProtection } from './middleware/csrf';
-import { initDatabase, startAutoSave } from './lib/database';
+import { initDatabase, startAutoSave, getDb, setActiveTenantConfig, saveDatabase } from './lib/database';
 import { hashPassword } from './lib/local-auth';
 import { startSyncEngine } from './lib/sync-engine';
 import { licenseCheck } from './middleware/license';
+import { agentControlService, sqlQueryOne } from './lib/agent-control.service';
+import { startUdpDiscoveryServer } from './lib/udp-discovery';
+import crypto from 'crypto';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -122,6 +126,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/cafe-tables', cafeTableRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/financial-closings', monthlyClosingsRoutes);
+app.use('/api/agent', agentRoutes);
 
 // Serve Static Frontend if compiled client/dist exists
 const possibleDistPaths = [
@@ -148,9 +153,95 @@ if (clientDistPath) {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+async function ensureInitialDemoSeed() {
+  try {
+    const existingUser = sqlQueryOne<{ id: string }>('SELECT id FROM users LIMIT 1');
+    if (existingUser) {
+      // Also restart simulated agents for any devices that were already paired in demo
+      const managedDevices = getDb().exec("SELECT id, tenant_id FROM devices WHERE is_managed = 1 AND agent_status != 'unpaired' AND archived = 0");
+      if (managedDevices[0]?.values) {
+        for (const row of managedDevices[0].values) {
+          agentControlService.startSimulatedAgent(String(row[0]), String(row[1]));
+        }
+      }
+      return;
+    }
+
+    const tenantId = '00000000-0000-4000-8000-000000000001';
+    const adminId = '00000000-0000-4000-8000-000000000010';
+    const nowIso = new Date().toISOString();
+    const futureExpiry = new Date(Date.now() + 365 * 86_400_000).toISOString();
+
+    setActiveTenantConfig({
+      tenant_id: tenantId,
+      tenant_name: 'CCMS Esports Arena',
+      owner_email: 'admin@ccms.local',
+      status: 'active',
+      plan: 'annual_full',
+      expires_at: futureExpiry,
+    });
+
+    const passwordHash = await hashPassword('admin123');
+    const db = getDb();
+
+    db.run(
+      `INSERT INTO users (id, email, full_name, role, password_hash, tenant_id, created_at, updated_at, synced)
+       VALUES (?, ?, ?, 'admin', ?, ?, ?, ?, 1)`,
+      [adminId, 'admin@ccms.local', 'Arena Admin', passwordHash, tenantId, nowIso, nowIso]
+    );
+
+    // Open an active shift so sessions can be started immediately
+    db.run(
+      `INSERT INTO shifts (id, user_id, tenant_id, started_at, opening_cash, total_revenue, total_expenses, status, created_at, synced)
+       VALUES (?, ?, ?, ?, 500, 0, 0, 'active', ?, 1)`,
+      [crypto.randomUUID(), adminId, tenantId, nowIso, nowIso]
+    );
+
+    // Seed sample devices: 2 managed PCs (online_locked), 1 unmanaged PC (unpaired), 1 PS5 console
+    const pc1Id = '00000000-0000-4000-8000-000000000101';
+    const pc2Id = '00000000-0000-4000-8000-000000000102';
+    const pc3Id = '00000000-0000-4000-8000-000000000103';
+    const ps5Id = '00000000-0000-4000-8000-000000000201';
+
+    db.run(
+      `INSERT INTO devices (id, name, type, status, specs, hourly_rate, hourly_rate_multi, archived, is_managed, device_number, agent_status, tenant_id, created_at, updated_at)
+       VALUES (?, 'PC-01 (RTX 4070)', 'pc', 'available', ?, 40, 40, 0, 1, 1, 'online_locked', ?, ?, ?)`,
+      [pc1Id, JSON.stringify({ gpu: 'RTX 4070', ram: '32GB', monitor: '240Hz' }), tenantId, nowIso, nowIso]
+    );
+
+    db.run(
+      `INSERT INTO devices (id, name, type, status, specs, hourly_rate, hourly_rate_multi, archived, is_managed, device_number, agent_status, tenant_id, created_at, updated_at)
+       VALUES (?, 'PC-02 (RTX 4070)', 'pc', 'available', ?, 40, 40, 0, 1, 2, 'online_locked', ?, ?, ?)`,
+      [pc2Id, JSON.stringify({ gpu: 'RTX 4070', ram: '32GB', monitor: '240Hz' }), tenantId, nowIso, nowIso]
+    );
+
+    db.run(
+      `INSERT INTO devices (id, name, type, status, specs, hourly_rate, hourly_rate_multi, archived, is_managed, device_number, agent_status, tenant_id, created_at, updated_at)
+       VALUES (?, 'PC-03 (RTX 4060)', 'pc', 'available', ?, 35, 35, 0, 1, 3, 'unpaired', ?, ?, ?)`,
+      [pc3Id, JSON.stringify({ gpu: 'RTX 4060', ram: '16GB', monitor: '165Hz' }), tenantId, nowIso, nowIso]
+    );
+
+    db.run(
+      `INSERT INTO devices (id, name, type, status, specs, hourly_rate, hourly_rate_multi, archived, is_managed, device_number, agent_status, tenant_id, created_at, updated_at)
+       VALUES (?, 'PS5 Lounge 01', 'console', 'available', ?, 60, 90, 0, 0, null, 'unpaired', ?, ?, ?)`,
+      [ps5Id, JSON.stringify({ controllers: 4, display: '65" 4K OLED' }), tenantId, nowIso, nowIso]
+    );
+
+    saveDatabase();
+
+    // Start live simulated Windows Agents for PC-01 and PC-02
+    agentControlService.startSimulatedAgent(pc1Id, tenantId);
+    agentControlService.startSimulatedAgent(pc2Id, tenantId);
+    console.log('✓ Seeded initial CCMS Esports Arena demo (admin@ccms.local / admin123) with Live Simulated Windows Agents on PC-01 & PC-02');
+  } catch (seedErr: any) {
+    console.warn('[server] Demo seed check warning:', seedErr?.message || seedErr);
+  }
+}
+
 async function startServer() {
   // Initialize offline SQLite DB
   await initDatabase();
+  await ensureInitialDemoSeed();
   startAutoSave(5000); // Save to disk every 5 seconds
   startSyncEngine(60000); // Run background Sync Engine every 60 seconds (1 minute)
 
@@ -158,6 +249,10 @@ async function startServer() {
     console.log(`\n  ⬡ CCMS Offline API running → http://localhost:${PORT}`);
     console.log(`  CORS origin → ${origin}\n`);
   });
+
+  // Attach CCMS Device Control Plane WebSockets (/ws/agent & /ws/dashboard) and UDP Discovery
+  agentControlService.init(server);
+  startUdpDiscoveryServer(Number(PORT));
 
   server.on('error', (err: any) => {
     if (err.code === 'EADDRINUSE') {

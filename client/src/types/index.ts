@@ -13,6 +13,79 @@ export interface User {
 
 export type DeviceType = 'pc' | 'console' | 'vr' | 'table';
 export type DeviceStatus = 'available' | 'in_use' | 'reserved' | 'offline';
+export type AgentStatus =
+  | 'unpaired'
+  | 'online_locked'
+  | 'online_in_session'
+  | 'offline'
+  | 'maintenance'
+  | 'revoked';
+
+export type DeviceCommandType =
+  | 'SESSION_START_UNLOCK'
+  | 'SESSION_UPDATE_TIME'
+  | 'SESSION_PAUSE_LOCK'
+  | 'SESSION_RESUME_UNLOCK'
+  | 'SESSION_END_LOCK'
+  | 'DISPLAY_MESSAGE'
+  | 'SYSTEM_RESTART'
+  | 'SYSTEM_SHUTDOWN'
+  | 'ADMIN_MAINTENANCE_UNLOCK'
+  | 'AGENT_UNPAIR_UNLOCK'
+  | 'ENTER_MAINTENANCE'
+  | 'EXIT_MAINTENANCE'
+  | 'REVOKE_CREDENTIAL';
+
+export interface AgentTelemetry {
+  device_id: string;
+  agent_status: AgentStatus;
+  cpu_percent: number;
+  ram_percent: number;
+  uptime_seconds: number;
+  active_window_title: string | null;
+  active_session_id: string | null;
+  last_seen_at: string;
+  last_ip: string | null;
+  agent_version: string;
+  is_simulated?: boolean;
+  last_message?: string | null;
+}
+
+export interface AgentPairingCodeInfo {
+  id: string;
+  code: string;
+  device_id: string | null;
+  expires_at: string;
+  controller_ip: string;
+  ws_url: string;
+  server_public_key: string;
+  server_public_key_fingerprint: string;
+  install_script_bat: string;
+}
+
+export interface DeviceAuditLogEntry {
+  id: string;
+  tenant_id: string;
+  device_id: string;
+  actor_id: string | null;
+  actor_name?: string | null;
+  event_type: string;
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface DeviceCommandRecord {
+  id: string;
+  device_id: string;
+  session_id: string | null;
+  command_type: DeviceCommandType;
+  params_json: Record<string, unknown>;
+  status: string;
+  error_message: string | null;
+  issued_at: string;
+  ack_at: string | null;
+  completed_at: string | null;
+}
 
 export interface Device {
   id: string;
@@ -22,6 +95,16 @@ export interface Device {
   specs: Record<string, string> | null;
   hourly_rate: number;
   hourly_rate_multi: number;
+  is_managed?: boolean;
+  device_number?: number | null;
+  agent_status?: AgentStatus;
+  agent_version?: string | null;
+  hardware_fingerprint?: string | null;
+  last_seen_at?: string | null;
+  last_ip?: string | null;
+  telemetry?: AgentTelemetry | null;
+  is_simulated?: boolean;
+  has_session_history?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -187,6 +270,8 @@ export interface CreateDevicePayload {
   hourly_rate: number;
   hourly_rate_multi?: number;
   specs?: Record<string, string>;
+  is_managed?: boolean;
+  device_number?: number | null;
 }
 
 // ----- Audit logs & Leaderboard -----

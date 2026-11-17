@@ -8,15 +8,16 @@
     "server"
   ],
   "scripts": {
-    "dev": "concurrently -n server,client -c cyan,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
-    "dev:electron": "concurrently -n server,client,electron -c cyan,magenta,yellow \"npm run dev -w server\" \"npm run dev -w client\" \"npm run electron:dev -w client\"",
-    "dev:server": "npm run dev -w server",
-    "dev:client": "npm run dev -w client",
-    "dist": "npm run build && npm run dist -w client",
-    "build": "npm run build -w server && npm run build -w client",
-    "build:server": "npm run build -w server",
-    "start": "npm start -w server",
-    "typecheck": "npm run typecheck -w server && npm run typecheck -w client"
+    "dev": "concurrently -n server,client -c cyan,magenta \"npm run dev -w ccms-server\" \"npm run dev -w ccms-client\"",
+    "dev:electron": "concurrently -n server,client,electron -c cyan,magenta,yellow \"npm run dev -w ccms-server\" \"npm run dev -w ccms-client\" \"npm run electron:dev -w ccms-client\"",
+    "dev:server": "npm run dev -w ccms-server",
+    "dev:client": "npm run dev -w ccms-client",
+    "dist": "npm run build && npm run dist -w ccms-client",
+    "build": "npm run build -w ccms-server && npm run build -w ccms-client",
+    "build:server": "npm run build -w ccms-server",
+    "start": "npm start -w ccms-server",
+    "typecheck": "npm run typecheck -w ccms-server && npm run typecheck -w ccms-client",
+    "lint": "npm run typecheck -w ccms-server && npm run typecheck -w ccms-client"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

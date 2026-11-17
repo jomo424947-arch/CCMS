@@ -5,11 +5,12 @@ import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { LoadingSpinner } from './ui/LoadingSpinner';
 import { dataService } from '../services';
-import type { Device, Session, SessionAuditLog } from '../types';
+import type { Device, Session, SessionAuditLog, AgentTelemetry, AgentStatus } from '../types';
 
 interface DeviceCardProps {
   device: Device;
   activeSession?: Session; // present when status is in_use
+  liveTelemetry?: AgentTelemetry | null;
   now?: number; // optional live timer override, defaults to internal useNow hook
   onAction?: (device: Device) => void;
   onEditSession?: (session: Session) => void;
@@ -18,6 +19,10 @@ interface DeviceCardProps {
   onPauseSession?: (session: Session) => void;
   onResumeSession?: (session: Session) => void;
   onDeleteDevice?: (device: Device) => void;
+  onPairAgent?: (device: Device) => void;
+  onSendMessage?: (device: Device) => void;
+  onPowerControl?: (device: Device, activeSession?: Session) => void;
+  onOpenAgentLogs?: (device: Device) => void;
   index?: number;
 }
 
@@ -211,6 +216,7 @@ function getDeviceBrandBadge(type: string, name?: string, specs?: Record<string,
 export function DeviceCard({ 
   device, 
   activeSession, 
+  liveTelemetry,
   now, 
   onAction, 
   onEditSession,
@@ -218,6 +224,10 @@ export function DeviceCard({
   onPauseSession,
   onResumeSession,
   onDeleteDevice,
+  onPairAgent,
+  onSendMessage,
+  onPowerControl,
+  onOpenAgentLogs,
   index = 0 
 }: DeviceCardProps) {
   const liveNow = useNow(1000);
@@ -226,6 +236,9 @@ export function DeviceCard({
   const [showAuditLogs, setShowAuditLogs] = useState(false);
   const isBilliards = device.type === 'table' || device.name.toLowerCase().includes('billiards') || device.name.toLowerCase().includes('بلياردو');
   const bgImg = getDeviceBgImage(device.type, device.name, device.specs);
+  const isManagedPc = Boolean(device.is_managed || device.type === 'pc');
+  const telemetry = liveTelemetry ?? device.telemetry ?? null;
+  const agentStatus: AgentStatus = telemetry?.agent_status || device.agent_status || 'unpaired';
 
   let actionLabel = 'START SESSION';
   if (device.status === 'available') {
@@ -527,49 +540,261 @@ export function DeviceCard({
 
         {/* Device Title & Status Indicator overlay at bottom of image */}
         <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <h4
-            style={{
-              fontFamily: 'Space Grotesk, sans-serif',
-              fontSize: '20px',
-              fontWeight: 800,
-              color: '#FFFFFF',
-              margin: 0,
-              letterSpacing: '0.5px',
-            }}
-          >
-            {device.name}
-          </h4>
-
-          {/* Glowing Status Dot + Text */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-            <span
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+            <h4
               style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: isAvailable ? '#22c55e' : isActive ? '#f59e0b' : '#9ca3af',
-                boxShadow: isAvailable
-                  ? '0 0 10px #22c55e'
-                  : isActive
-                  ? '0 0 10px #f59e0b'
-                  : 'none',
-              }}
-            />
-            <span
-              style={{
-                fontSize: '13px',
-                fontWeight: 600,
-                color: isAvailable ? '#22c55e' : isActive ? '#f59e0b' : '#9ca3af',
+                fontFamily: 'Space Grotesk, sans-serif',
+                fontSize: '20px',
+                fontWeight: 800,
+                color: '#FFFFFF',
+                margin: 0,
+                letterSpacing: '0.5px',
               }}
             >
-              {isAvailable ? 'متاح' : isActive ? 'مشغول' : device.status}
-            </span>
+              {device.name}
+            </h4>
+            {isManagedPc && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  fontSize: '10.5px',
+                  fontWeight: 700,
+                  fontFamily: 'JetBrains Mono, monospace',
+                  background:
+                    agentStatus === 'online_in_session'
+                      ? 'rgba(0, 194, 255, 0.18)'
+                      : agentStatus === 'online_locked'
+                      ? 'rgba(16, 185, 129, 0.18)'
+                      : agentStatus === 'maintenance'
+                      ? 'rgba(245, 158, 11, 0.2)'
+                      : 'rgba(255, 255, 255, 0.08)',
+                  border:
+                    agentStatus === 'online_in_session'
+                      ? '1px solid rgba(0, 194, 255, 0.45)'
+                      : agentStatus === 'online_locked'
+                      ? '1px solid rgba(16, 185, 129, 0.45)'
+                      : agentStatus === 'maintenance'
+                      ? '1px solid rgba(245, 158, 11, 0.45)'
+                      : '1px solid rgba(255, 255, 255, 0.14)',
+                  color:
+                    agentStatus === 'online_in_session'
+                      ? '#00C2FF'
+                      : agentStatus === 'online_locked'
+                      ? '#10b981'
+                      : agentStatus === 'maintenance'
+                      ? '#f59e0b'
+                      : '#9ca3af',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>
+                  {agentStatus === 'online_in_session'
+                    ? 'lock_open'
+                    : agentStatus === 'online_locked'
+                    ? 'lock'
+                    : agentStatus === 'maintenance'
+                    ? 'build'
+                    : 'link_off'}
+                </span>
+                <span>
+                  {agentStatus === 'online_in_session'
+                    ? 'UNLOCKED'
+                    : agentStatus === 'online_locked'
+                    ? 'LOCKED'
+                    : agentStatus === 'maintenance'
+                    ? 'MAINT'
+                    : agentStatus === 'offline'
+                    ? 'OFFLINE'
+                    : 'UNPAIRED'}
+                </span>
+              </span>
+            )}
+          </div>
+
+          {/* Glowing Status Dot + Text */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginTop: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: isAvailable ? '#22c55e' : isActive ? '#f59e0b' : '#9ca3af',
+                  boxShadow: isAvailable
+                    ? '0 0 10px #22c55e'
+                    : isActive
+                    ? '0 0 10px #f59e0b'
+                    : 'none',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: isAvailable ? '#22c55e' : isActive ? '#f59e0b' : '#9ca3af',
+                }}
+              >
+                {isAvailable ? 'متاح' : isActive ? 'مشغول' : device.status}
+              </span>
+            </div>
+            {telemetry?.last_ip && (
+              <span style={{ fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', color: 'rgba(255,255,255,0.65)' }}>
+                {telemetry.last_ip}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       {/* Card Content & Active Session details */}
-      <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+      <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+        {/* Live Windows Agent Telemetry Strip + Quick Control Actions */}
+        {isManagedPc && (
+          <div
+            style={{
+              padding: '9px 11px',
+              borderRadius: '10px',
+              background: 'rgba(0, 194, 255, 0.04)',
+              border: '1px solid rgba(0, 194, 255, 0.14)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+            }}
+          >
+            {telemetry && agentStatus !== 'unpaired' && agentStatus !== 'offline' ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '3px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>CPU</span>
+                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#00C2FF' }}>
+                      {telemetry.cpu_percent}%
+                    </span>
+                  </div>
+                  <div style={{ height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        width: `${Math.min(100, telemetry.cpu_percent)}%`,
+                        height: '100%',
+                        background: telemetry.cpu_percent > 85 ? '#ef4444' : '#00C2FF',
+                        transition: 'width 0.3s ease',
+                      }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '3px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>RAM</span>
+                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#10b981' }}>
+                      {telemetry.ram_percent}%
+                    </span>
+                  </div>
+                  <div style={{ height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        width: `${Math.min(100, telemetry.ram_percent)}%`,
+                        height: '100%',
+                        background: telemetry.ram_percent > 85 ? '#f59e0b' : '#10b981',
+                        transition: 'width 0.3s ease',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                <span>Agent: {agentStatus === 'unpaired' ? 'Unpaired Terminal' : 'Disconnected'}</span>
+                {onPairAgent && (
+                  <button
+                    type="button"
+                    onClick={() => onPairAgent(device)}
+                    style={{
+                      background: 'rgba(0, 194, 255, 0.14)',
+                      border: '1px solid rgba(0, 194, 255, 0.35)',
+                      color: '#00C2FF',
+                      borderRadius: '6px',
+                      padding: '2px 8px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Pair Agent
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Agent Quick Control Toolbar */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '6px' }}>
+              <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                {telemetry?.active_window_title || 'CCMS Agent v1.2'}
+              </span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {onSendMessage && (
+                  <button
+                    type="button"
+                    title="Send Screen Message to Player"
+                    onClick={() => onSendMessage(device)}
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: '#00C2FF',
+                      borderRadius: '6px',
+                      padding: '3px 6px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>chat</span>
+                  </button>
+                )}
+                {onPowerControl && (
+                  <button
+                    type="button"
+                    title="Remote Restart / Shutdown PC"
+                    onClick={() => onPowerControl(device, activeSession)}
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: '#f59e0b',
+                      borderRadius: '6px',
+                      padding: '3px 6px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>power_settings_new</span>
+                  </button>
+                )}
+                {onOpenAgentLogs && (
+                  <button
+                    type="button"
+                    title="Agent Security & Signed Command Audit Log"
+                    onClick={() => onOpenAgentLogs(device)}
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: '#a855f7',
+                      borderRadius: '6px',
+                      padding: '3px 6px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>shield</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {isActive && activeSession && (
           <div
             style={{

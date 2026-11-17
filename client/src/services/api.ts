@@ -39,6 +39,11 @@ import type {
   MonthlyFinancialDetails,
   MonthlyClosingRecord,
   CloseMonthPayload,
+  AgentTelemetry,
+  AgentPairingCodeInfo,
+  DeviceCommandType,
+  DeviceAuditLogEntry,
+  DeviceCommandRecord,
 } from '../types';
 
 /**
@@ -176,4 +181,32 @@ export interface DataService {
   getMonthlyFinancialDetails(year: number, month: number): Promise<MonthlyFinancialDetails>;
   closeFinancialMonth(year: number, month: number, payload?: CloseMonthPayload): Promise<{ message: string; data: MonthlyClosingRecord }>;
   reopenFinancialMonth(year: number, month: number, reason?: string): Promise<{ message: string; data: MonthlyClosingRecord }>;
+
+  // agent control plane
+  generateAgentPairingCode(deviceId?: string | null, ttlMinutes?: number): Promise<AgentPairingCodeInfo>;
+  listAgentTelemetry(): Promise<{ telemetry: AgentTelemetry[]; server_public_key_fingerprint: string }>;
+  sendDeviceCommand(
+    deviceId: string,
+    commandType: DeviceCommandType,
+    payload?: Record<string, unknown>,
+    sessionId?: string | null
+  ): Promise<{ envelope: any; telemetry: AgentTelemetry | null }>;
+  sendSafePowerCommand(
+    deviceId: string,
+    action: 'restart' | 'shutdown',
+    activeSessionHandling?: 'keep_alive' | 'end_and_bill',
+    reason?: string
+  ): Promise<{ envelope: any; active_session_id: string | null; active_session_handling: string }>;
+  unpairAgentDevice(deviceId: string): Promise<{ device_id: string; agent_status: string }>;
+  toggleSimulatedAgent(deviceId: string, enabled: boolean): Promise<{ device_id: string; is_simulated: boolean; telemetry: AgentTelemetry | null }>;
+  sendBulkDeviceCommand(
+    commandType: DeviceCommandType,
+    payload?: Record<string, unknown>,
+    deviceIds?: string[]
+  ): Promise<{ dispatched_count: number; device_ids: string[] }>;
+  listDeviceAuditLogs(deviceId: string): Promise<{
+    device: Partial<Device>;
+    audit_logs: DeviceAuditLogEntry[];
+    commands: DeviceCommandRecord[];
+  }>;
 }

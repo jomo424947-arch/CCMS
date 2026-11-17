@@ -6,11 +6,17 @@ export default defineConfig({
   base: process.env.VERCEL ? '/' : './',
   plugins: [react()],
   server: {
-    port: 5173,
-    // Proxy /api → Express backend so we can call /api/* in dev without CORS fuss.
+    port: 3000,
+    host: '0.0.0.0',
+    // Proxy /api and /ws → Express backend so REST and WebSocket Control Plane work seamlessly.
     proxy: {
       '/api': {
         target: process.env.VITE_API_URL || 'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: process.env.VITE_API_URL || 'http://localhost:5000',
+        ws: true,
         changeOrigin: true,
       },
     },

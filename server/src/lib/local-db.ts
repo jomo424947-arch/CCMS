@@ -92,6 +92,19 @@ const FK_MAP: Record<string, Record<string, string>> = {
     shift_id: 'shifts',
     created_by: 'users',
   },
+  device_commands: {
+    device_id: 'devices',
+    session_id: 'sessions',
+    issued_by: 'users',
+  },
+  device_audit_log: {
+    device_id: 'devices',
+    actor_id: 'users',
+  },
+  device_pairing_codes: {
+    device_id: 'devices',
+    created_by: 'users',
+  },
 };
 
 // Nested join map for two-level joins  e.g.  session:sessions(… device:devices(…))
@@ -629,13 +642,14 @@ class QueryBuilder {
 
   /** Convert SQLite types to JS types matching Supabase output. */
   private _convertTypes(row: Record<string, any>): Record<string, any> {
-    const boolCols = ['paid', 'archived', 'is_overtime', 'is_paused', 'edited_start_at', 'synced'];
-    const jsonCols = ['specs'];
+    const boolCols = ['paid', 'archived', 'is_overtime', 'is_paused', 'edited_start_at', 'synced', 'is_managed', 'device_control_enabled'];
+    const jsonCols = ['specs', 'params_json', 'details'];
     const numericCols = [
       'hourly_rate', 'hourly_rate_multi', 'hourly_rate_override', 'amount', 'total_cost',
       'price', 'cost_price', 'unit_price', 'total_price', 'opening_cash', 'closing_cash',
       'total_revenue', 'total_expenses', 'cost', 'duration_minutes', 'subtotal',
-      'discount_amount', 'discount_value', 'service_fee', 'service_rate', 'rounding_delta'
+      'discount_amount', 'discount_value', 'service_fee', 'service_rate', 'rounding_delta',
+      'device_number', 'max_managed_devices'
     ];
 
     for (const key of Object.keys(row)) {
@@ -678,6 +692,9 @@ class QueryBuilder {
       'standalone_orders',
       'session_transfers',
       'product_stock_logs',
+      'device_pairing_codes',
+      'device_commands',
+      'device_audit_log',
     ];
     if (multiTenantTables.includes(this._table) && !data.tenant_id) {
       const activeTenantId = getActiveTenantId(db);
@@ -874,6 +891,8 @@ class QueryBuilder {
 
   private _queueSync(operation: string, recordId: string, payload: any): void {
     if (!recordId) return;
+    // Local-only tables (Phase 1 pairing OTPs and transient LAN command queue) do not push to cloud sync_queue
+    if (this._table === 'device_pairing_codes' || this._table === 'device_commands') return;
     try {
       const db = getDb();
       db.run(

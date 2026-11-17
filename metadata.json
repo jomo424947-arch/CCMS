@@ -1,0 +1,8 @@
+{
+  "name": "CCMS — Cyber Café & Device Control System",
+  "description": "Enterprise Cyber Café & Gaming Lounge Management System with Active Windows Device Control, LAN WebSocket Enforcement, Ed25519 Signed Commands, and Real-Time Telemetry.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

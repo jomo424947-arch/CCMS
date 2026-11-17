@@ -47,6 +47,8 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     '/api/auth/forgot-password',
     '/api/auth/reset-password',
     '/api/auth/activate',
+    '/api/agent/pair',
+    '/api/agent/discover',
     '/health',
   ];
 

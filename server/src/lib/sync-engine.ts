@@ -950,6 +950,7 @@ export async function runSync(): Promise<void> {
       'session_pauses',
       'product_stock_logs',
       'monthly_closings',
+      'device_audit_log',
     ]);
 
     // 3. Push local changes from SQLite up to Cloud FIRST
@@ -973,6 +974,7 @@ export async function runSync(): Promise<void> {
       reservations: 16,
       session_audit_log: 17,
       monthly_closings: 18,
+      device_audit_log: 19,
     };
 
     // Get unsynced queue items
@@ -1125,10 +1127,11 @@ function cleanForCloud(tableName: string, record: Record<string, any>): Record<s
   delete result.synced;
   delete result.synced_at;
   delete result.password_hash; // Security: do not push local password hashes to cloud
+  delete result.agent_token; // Security: keep agent authentication token local to LAN controller
 
   // List of tables and their column type converters
-  const boolCols = ['paid', 'archived', 'is_overtime', 'edited_start_at', 'is_paused'];
-  const jsonCols = ['specs'];
+  const boolCols = ['paid', 'archived', 'is_overtime', 'edited_start_at', 'is_paused', 'is_managed'];
+  const jsonCols = ['specs', 'details', 'params_json'];
   const realCols = [
     'hourly_rate',
     'hourly_rate_multi',

@@ -39,16 +39,16 @@ function resolveBaseUrl(): string {
       return envUrl.trim().replace(/\/+$/, '');
     }
 
-    // 4. If running in browser or mobile on a remote host / LAN IP without explicit env
+    // 4. If running in browser on Vite dev server (3000/5173) or same-origin proxy, use relative URL ''
+    if (port === '3000' || port === '5173' || port === '5000' || !port || port === '80' || port === '443') {
+      return '';
+    }
+
     if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      // If served directly or via Vercel proxy rewrite, relative '' works seamlessly
-      if (port === '5000' || !port || port === '80' || port === '443') {
-        return '';
-      }
       return `${protocol}//${hostname}:5000`;
     }
   }
-  return envUrl || 'http://localhost:5000';
+  return envUrl || '';
 }
 
 const baseURL = resolveBaseUrl();

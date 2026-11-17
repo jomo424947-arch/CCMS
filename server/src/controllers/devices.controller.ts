@@ -2,8 +2,9 @@ import { Request, Response } from 'express';
 import { supabase } from '../lib/supabase';
 import { badRequest, forbidden, notFound } from '../lib/errors';
 import type { DbDevice } from '../lib/types';
+import { agentControlService } from '../lib/agent-control.service';
 
-/** GET /api/devices — list all devices with current status. */
+/** GET /api/devices — list all devices with current status and live Agent telemetry. */
 export async function listDevices(req: Request, res: Response) {
   const includeArchived = req.query.include_archived === 'true';
 
@@ -36,10 +37,21 @@ export async function listDevices(req: Request, res: Response) {
       });
     }
 
-    const result = devices.map((d: any) => ({
-      ...d,
-      has_session_history: historyMap.has(d.id),
-    }));
+    const result = devices.map((d: any) => {
+      const { agent_token, ...safeDevice } = d;
+      const telemetry = agentControlService.getDeviceTelemetry(d.id);
+      const is_simulated = agentControlService.isSimulatedAgentRunning(d.id);
+      return {
+        ...safeDevice,
+        is_managed: Boolean(d.is_managed),
+        agent_status: telemetry?.agent_status || d.agent_status || 'unpaired',
+        last_seen_at: telemetry?.last_seen_at || d.last_seen_at || null,
+        last_ip: telemetry?.last_ip || d.last_ip || null,
+        telemetry,
+        is_simulated,
+        has_session_history: historyMap.has(d.id),
+      };
+    });
     res.json({ data: result });
     return;
   }
@@ -52,7 +64,7 @@ export async function createDevice(req: Request, res: Response) {
   if (req.user?.role !== 'admin') {
     throw forbidden('Only admins can create devices');
   }
-  const { name, type, hourly_rate, hourly_rate_multi, specs } = req.body;
+  const { name, type, hourly_rate, hourly_rate_multi, specs, is_managed, device_number } = req.body;
 
   const { data, error } = await supabase
     .from('devices')
@@ -63,26 +75,37 @@ export async function createDevice(req: Request, res: Response) {
       hourly_rate_multi: hourly_rate_multi ?? hourly_rate,
       specs: specs ?? null,
       status: 'available',
+      is_managed: is_managed !== undefined ? Boolean(is_managed) : type === 'pc',
+      device_number: device_number ?? null,
+      agent_status: 'unpaired',
       tenant_id: req.user!.tenant_id,
     })
     .select()
     .single();
 
   if (error) {
-    if (error.code === '23505') throw badRequest('A device with that name already exists');
+    if (error.code === '23505') throw badRequest('A device with that name or number already exists');
     throw error;
   }
-  res.status(201).json({ data: data as DbDevice });
+  res.status(201).json({ data: { ...(data as any), is_managed: Boolean((data as any)?.is_managed) } as DbDevice });
 }
 
 /** PATCH /api/devices/:id — update device info or status. */
 export async function updateDevice(req: Request, res: Response) {
   const { id } = req.params;
-  const { name, type, status, hourly_rate, hourly_rate_multi, specs } = req.body;
+  const { name, type, status, hourly_rate, hourly_rate_multi, specs, is_managed, device_number } = req.body;
 
   // Security: only admins can edit configuration details. Staff can only update status.
   if (req.user?.role !== 'admin') {
-    if (name !== undefined || type !== undefined || hourly_rate !== undefined || hourly_rate_multi !== undefined || specs !== undefined) {
+    if (
+      name !== undefined ||
+      type !== undefined ||
+      hourly_rate !== undefined ||
+      hourly_rate_multi !== undefined ||
+      specs !== undefined ||
+      is_managed !== undefined ||
+      device_number !== undefined
+    ) {
       throw forbidden('Only admins can update device settings');
     }
   }
@@ -110,6 +133,8 @@ export async function updateDevice(req: Request, res: Response) {
   if (hourly_rate !== undefined) patch.hourly_rate = hourly_rate;
   if (hourly_rate_multi !== undefined) patch.hourly_rate_multi = hourly_rate_multi;
   if (specs !== undefined) patch.specs = specs;
+  if (is_managed !== undefined) patch.is_managed = is_managed ? 1 : 0;
+  if (device_number !== undefined) patch.device_number = device_number;
 
   const { data, error } = await supabase
     .from('devices')
@@ -121,7 +146,7 @@ export async function updateDevice(req: Request, res: Response) {
 
   if (error) throw error;
   if (!data) throw notFound('Device not found');
-  res.json({ data: data as DbDevice });
+  res.json({ data: { ...(data as any), is_managed: Boolean((data as any)?.is_managed) } as DbDevice });
 }
 
 /** DELETE /api/devices/:id — remove a device (admin only). */

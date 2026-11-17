@@ -20,6 +20,13 @@ import {
   TransferSessionModal,
 } from '../components/SessionModals';
 import { DeviceFormModal } from '../components/DeviceFormModal';
+import {
+  PairDeviceModal,
+  SendMessageModal,
+  PowerControlModal,
+  DeviceAuditLogModal,
+} from '../components/AgentControlModals';
+import { useAgentLiveStatus } from '../hooks/useAgentLiveStatus';
 import type { Device, DeviceType, Session } from '../types';
 
 export default function DevicesPage() {
@@ -67,6 +74,22 @@ export default function DevicesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Device | null>(null);
   const [creating, setCreating] = useState(false);
   const [deletingLoading, setDeletingLoading] = useState(false);
+
+  // Agent Control Plane Modals State
+  const [pairTarget, setPairTarget] = useState<Device | null | undefined>(undefined); // undefined = closed, null = bulk
+  const [messageTarget, setMessageTarget] = useState<Device | null | undefined>(undefined); // undefined = closed, null = broadcast
+  const [powerTarget, setPowerTarget] = useState<{ device: Device; session?: Session } | null>(null);
+  const [auditTarget, setAuditTarget] = useState<Device | null>(null);
+  const [bulkLockLoading, setBulkLockLoading] = useState(false);
+
+  const { telemetryByDevice, wsConnected } = useAgentLiveStatus((alert) => {
+    toast(
+      language === 'ar'
+        ? `تنبيه أمني (${alert.alert_type}): ${alert.device_name || alert.device_id}`
+        : `Security Alert (${alert.alert_type}): ${alert.device_name || alert.device_id}`,
+      'error'
+    );
+  });
 
   const hallDevices = useMemo(() => {
     return (data?.devices ?? []).filter(
@@ -136,6 +159,27 @@ export default function DevicesPage() {
     }
   };
 
+  const handleBulkLockIdle = async () => {
+    setBulkLockLoading(true);
+    try {
+      const res = await dataService.sendBulkDeviceCommand('SESSION_END_LOCK', {
+        only_idle: true,
+        reason: 'Cashier bulk-locked all idle terminals',
+      });
+      toast(
+        language === 'ar'
+          ? `تم إرسال أمر القفل المشفر إلى ${res.dispatched_count} جهاز متاح`
+          : `Sent signed lock command to ${res.dispatched_count} idle PCs`,
+        'success'
+      );
+      refetch();
+    } catch (err) {
+      toast(apiErrorMessage(err, 'Failed to bulk lock idle PCs'), 'error');
+    } finally {
+      setBulkLockLoading(false);
+    }
+  };
+
   if (loading || !data) {
     return (
       <Layout title={t('devices')} subtitle={t('loading')}>
@@ -146,6 +190,11 @@ export default function DevicesPage() {
 
   const totalHallDevices = hallDevices.length + billiardsDevices.length;
   const availableHallDevices = [...hallDevices, ...billiardsDevices].filter((d) => d.status === 'available').length;
+  const managedPcs = hallDevices.filter((d) => d.is_managed || d.type === 'pc');
+  const onlineAgentsCount = managedPcs.filter((d) => {
+    const st = telemetryByDevice[d.id]?.agent_status || d.agent_status;
+    return st === 'online_locked' || st === 'online_in_session' || st === 'maintenance';
+  }).length;
 
   return (
     <Layout
@@ -201,7 +250,130 @@ export default function DevicesPage() {
           />
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+          {/* CCMS Device Control & Enforcement Bar */}
+          {managedPcs.length > 0 && (
+            <div
+              style={{
+                padding: '14px 18px',
+                borderRadius: '14px',
+                background: 'linear-gradient(135deg, rgba(0, 194, 255, 0.08) 0%, rgba(10, 14, 26, 0.95) 100%)',
+                border: '1px solid rgba(0, 194, 255, 0.25)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '12px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    background: 'rgba(0, 194, 255, 0.14)',
+                    border: '1px solid rgba(0, 194, 255, 0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#00C2FF',
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>shield_lock</span>
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#FFFFFF' }}>
+                      {language === 'ar'
+                        ? 'محرك التحكم والحماية للأجهزة (CCMS Agent Control Plane)'
+                        : 'CCMS Device Control & Enforcement Engine'}
+                    </span>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 8px',
+                        borderRadius: '999px',
+                        fontSize: '10.5px',
+                        fontFamily: 'JetBrains Mono, monospace',
+                        fontWeight: 700,
+                        background: wsConnected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                        color: wsConnected ? '#10b981' : '#f59e0b',
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          background: wsConnected ? '#10b981' : '#f59e0b',
+                        }}
+                      />
+                      {wsConnected ? 'WS LIVE' : 'SYNCING'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', fontFamily: 'JetBrains Mono, Cairo, sans-serif' }}>
+                    {language === 'ar'
+                      ? `${onlineAgentsCount} من ${managedPcs.length} كمبيوتر متصل بنظام القفل التلقائي (Ed25519 Signed)`
+                      : `${onlineAgentsCount} / ${managedPcs.length} PCs connected with active Ed25519 screen lock enforcement`}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    className="ccms-btn ccms-btn-ghost"
+                    onClick={() => setPairTarget(null)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      borderColor: 'rgba(0, 194, 255, 0.4)',
+                      color: '#00C2FF',
+                      fontSize: '12px',
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>qr_code_2</span>
+                    <span>{language === 'ar' ? 'ربط جهاز / تحميل التثبيت' : 'Pair PC / Mass Deploy'}</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="ccms-btn ccms-btn-ghost"
+                  onClick={() => setMessageTarget(null)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '12px',
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>campaign</span>
+                  <span>{language === 'ar' ? 'رسالة جماعية للشاشات' : 'Broadcast Message'}</span>
+                </button>
+                <button
+                  type="button"
+                  className="ccms-btn ccms-btn-ghost"
+                  onClick={handleBulkLockIdle}
+                  disabled={bulkLockLoading}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '12px',
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>lock</span>
+                  <span>{language === 'ar' ? 'قفل الأجهزة المتاحة' : 'Lock Idle PCs'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Section 1: أجهزة الصالة (PlayStation / Consoles / PC) */}
           {hallDevices.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -227,6 +399,7 @@ export default function DevicesPage() {
                     device={device}
                     index={i}
                     activeSession={activeByDevice.get(device.id)}
+                    liveTelemetry={telemetryByDevice[device.id]}
                     onAction={handleAction}
                     onEditSession={(session) => setEditTarget(session)}
                     onTransferSession={(session) => setTransferTarget(session)}
@@ -234,6 +407,10 @@ export default function DevicesPage() {
                     onPauseSession={handlePauseSession}
                     onResumeSession={handleResumeSession}
                     onDeleteDevice={isAdmin ? (dev) => setDeleteTarget(dev) : undefined}
+                    onPairAgent={isAdmin ? (dev) => setPairTarget(dev) : undefined}
+                    onSendMessage={(dev) => setMessageTarget(dev)}
+                    onPowerControl={(dev, sess) => setPowerTarget({ device: dev, session: sess })}
+                    onOpenAgentLogs={(dev) => setAuditTarget(dev)}
                   />
                 ))}
               </div>
@@ -386,6 +563,43 @@ export default function DevicesPage() {
               : `Are you sure you want to delete and remove device (${deleteTarget.name}) from the system?`}
           </p>
         </Modal>
+      )}
+
+      {/* Agent Control Plane Modals */}
+      {pairTarget !== undefined && (
+        <PairDeviceModal
+          device={pairTarget}
+          allDevices={data.devices}
+          onClose={() => setPairTarget(undefined)}
+          onPairedOrSimulated={refetch}
+        />
+      )}
+
+      {messageTarget !== undefined && (
+        <SendMessageModal
+          device={messageTarget}
+          onClose={() => setMessageTarget(undefined)}
+          onSent={refetch}
+        />
+      )}
+
+      {powerTarget && (
+        <PowerControlModal
+          device={powerTarget.device}
+          activeSession={powerTarget.session}
+          onClose={() => setPowerTarget(null)}
+          onEndSessionFirst={(sess) => setEndTarget(sess)}
+          onDone={refetch}
+        />
+      )}
+
+      {auditTarget && (
+        <DeviceAuditLogModal
+          device={auditTarget}
+          isAdmin={isAdmin}
+          onClose={() => setAuditTarget(null)}
+          onUpdated={refetch}
+        />
       )}
     </Layout>
   );

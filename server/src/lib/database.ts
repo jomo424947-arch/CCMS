@@ -56,7 +56,9 @@ CREATE TABLE IF NOT EXISTS tenant_config (
   plan TEXT NOT NULL DEFAULT 'monthly_full',
   expires_at TEXT,
   activated_at TEXT,
-  last_checked_at TEXT
+  last_checked_at TEXT,
+  max_managed_devices INTEGER NOT NULL DEFAULT 50,
+  device_control_enabled INTEGER NOT NULL DEFAULT 1
 );
 
 -- users (mirrors auth.users in Supabase)
@@ -75,20 +77,31 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- devices
 CREATE TABLE IF NOT EXISTS devices (
-  id              TEXT PRIMARY KEY,
-  name            TEXT NOT NULL,
-  type            TEXT NOT NULL DEFAULT 'pc' CHECK (type IN ('pc','console','vr','table')),
-  status          TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available','in_use','reserved','offline')),
-  specs           TEXT,
-  hourly_rate     REAL NOT NULL DEFAULT 0 CHECK (hourly_rate >= 0),
-  hourly_rate_multi REAL NOT NULL DEFAULT 0 CHECK (hourly_rate_multi >= 0),
-  archived        INTEGER NOT NULL DEFAULT 0,
-  tenant_id       TEXT,
-  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
-  synced          INTEGER NOT NULL DEFAULT 0,
-  synced_at       TEXT
+  id                   TEXT PRIMARY KEY,
+  name                 TEXT NOT NULL,
+  type                 TEXT NOT NULL DEFAULT 'pc' CHECK (type IN ('pc','console','vr','table')),
+  status               TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available','in_use','reserved','offline')),
+  specs                TEXT,
+  hourly_rate          REAL NOT NULL DEFAULT 0 CHECK (hourly_rate >= 0),
+  hourly_rate_multi    REAL NOT NULL DEFAULT 0 CHECK (hourly_rate_multi >= 0),
+  archived             INTEGER NOT NULL DEFAULT 0,
+  is_managed           INTEGER NOT NULL DEFAULT 0,
+  device_number        INTEGER,
+  agent_status         TEXT NOT NULL DEFAULT 'unpaired' CHECK (agent_status IN ('unpaired','online_locked','online_in_session','offline','maintenance','revoked')),
+  agent_version        TEXT,
+  hardware_fingerprint TEXT,
+  agent_public_key     TEXT,
+  agent_token          TEXT,
+  last_seen_at         TEXT,
+  last_ip              TEXT,
+  tenant_id            TEXT,
+  created_at           TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at           TEXT NOT NULL DEFAULT (datetime('now')),
+  synced               INTEGER NOT NULL DEFAULT 0,
+  synced_at            TEXT
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_tenant_number ON devices(tenant_id, device_number) WHERE archived = 0 AND device_number IS NOT NULL;
 
 -- customers
 CREATE TABLE IF NOT EXISTS customers (
@@ -403,6 +416,51 @@ CREATE TABLE IF NOT EXISTS monthly_closings (
 
 CREATE INDEX IF NOT EXISTS idx_monthly_closings_tenant ON monthly_closings(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_monthly_closings_status ON monthly_closings(status);
+
+-- device_pairing_codes (local LAN OTP pairing codes)
+CREATE TABLE IF NOT EXISTS device_pairing_codes (
+  id          TEXT PRIMARY KEY,
+  tenant_id   TEXT NOT NULL,
+  device_id   TEXT REFERENCES devices(id) ON DELETE CASCADE,
+  code        TEXT NOT NULL UNIQUE,
+  expires_at  TEXT NOT NULL,
+  used_at     TEXT,
+  created_by  TEXT REFERENCES users(id),
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- device_commands (signed command queue & lifecycle tracking)
+CREATE TABLE IF NOT EXISTS device_commands (
+  id              TEXT PRIMARY KEY,
+  tenant_id       TEXT NOT NULL,
+  device_id       TEXT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+  session_id      TEXT REFERENCES sessions(id) ON DELETE SET NULL,
+  command_type    TEXT NOT NULL,
+  params_json     TEXT,
+  status          TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','sent','received','executing','succeeded','failed','expired')),
+  error_message   TEXT,
+  issued_by       TEXT REFERENCES users(id),
+  issued_at       TEXT NOT NULL DEFAULT (datetime('now')),
+  ack_at          TEXT,
+  completed_at    TEXT,
+  synced          INTEGER NOT NULL DEFAULT 0,
+  synced_at       TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_device_commands_device_status ON device_commands(device_id, status);
+
+-- device_audit_log (security & enforcement forensics)
+CREATE TABLE IF NOT EXISTS device_audit_log (
+  id          TEXT PRIMARY KEY,
+  tenant_id   TEXT NOT NULL,
+  device_id   TEXT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+  actor_id    TEXT REFERENCES users(id) ON DELETE SET NULL,
+  event_type  TEXT NOT NULL,
+  details     TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  synced      INTEGER NOT NULL DEFAULT 0,
+  synced_at   TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_device_audit_log_device ON device_audit_log(device_id, created_at);
 
 -- sync_queue for tracking what needs to be pushed to Supabase
 CREATE TABLE IF NOT EXISTS sync_queue (
@@ -1162,6 +1220,82 @@ CREATE INDEX IF NOT EXISTS idx_monthly_closings_status ON monthly_closings(statu
         last_synced_at TEXT NOT NULL,
         PRIMARY KEY (table_name, tenant_id)
       );
+    `);
+
+    // Auto-migration for Device Control Plane (019_device_control_plane)
+    const devTableInfo = _db.exec("PRAGMA table_info(devices)");
+    const devColumns = devTableInfo[0]?.values.map(v => v[1] as string) || [];
+    const deviceControlMigrations: Array<[string, string]> = [
+      ['is_managed', 'ALTER TABLE devices ADD COLUMN is_managed INTEGER NOT NULL DEFAULT 0;'],
+      ['device_number', 'ALTER TABLE devices ADD COLUMN device_number INTEGER;'],
+      ['agent_status', "ALTER TABLE devices ADD COLUMN agent_status TEXT NOT NULL DEFAULT 'unpaired';"],
+      ['agent_version', 'ALTER TABLE devices ADD COLUMN agent_version TEXT;'],
+      ['hardware_fingerprint', 'ALTER TABLE devices ADD COLUMN hardware_fingerprint TEXT;'],
+      ['agent_public_key', 'ALTER TABLE devices ADD COLUMN agent_public_key TEXT;'],
+      ['agent_token', 'ALTER TABLE devices ADD COLUMN agent_token TEXT;'],
+      ['last_seen_at', 'ALTER TABLE devices ADD COLUMN last_seen_at TEXT;'],
+      ['last_ip', 'ALTER TABLE devices ADD COLUMN last_ip TEXT;'],
+    ];
+    for (const [colName, ddl] of deviceControlMigrations) {
+      if (!devColumns.includes(colName)) {
+        try {
+          _db.run(ddl);
+        } catch (colErr: any) {
+          console.warn(`[database] Could not add column ${colName} to devices:`, colErr?.message || colErr);
+        }
+      }
+    }
+
+    const tcTableInfo = _db.exec("PRAGMA table_info(tenant_config)");
+    const tcColumns = tcTableInfo[0]?.values.map(v => v[1] as string) || [];
+    if (!tcColumns.includes('max_managed_devices')) {
+      try { _db.run('ALTER TABLE tenant_config ADD COLUMN max_managed_devices INTEGER NOT NULL DEFAULT 50;'); } catch {}
+    }
+    if (!tcColumns.includes('device_control_enabled')) {
+      try { _db.run('ALTER TABLE tenant_config ADD COLUMN device_control_enabled INTEGER NOT NULL DEFAULT 1;'); } catch {}
+    }
+
+    executeSchemaSafe(_db, `
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_tenant_number ON devices(tenant_id, device_number) WHERE archived = 0 AND device_number IS NOT NULL;
+      CREATE TABLE IF NOT EXISTS device_pairing_codes (
+        id          TEXT PRIMARY KEY,
+        tenant_id   TEXT NOT NULL,
+        device_id   TEXT REFERENCES devices(id) ON DELETE CASCADE,
+        code        TEXT NOT NULL UNIQUE,
+        expires_at  TEXT NOT NULL,
+        used_at     TEXT,
+        created_by  TEXT REFERENCES users(id),
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE TABLE IF NOT EXISTS device_commands (
+        id              TEXT PRIMARY KEY,
+        tenant_id       TEXT NOT NULL,
+        device_id       TEXT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+        session_id      TEXT REFERENCES sessions(id) ON DELETE SET NULL,
+        command_type    TEXT NOT NULL,
+        params_json     TEXT,
+        status          TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','sent','received','executing','succeeded','failed','expired')),
+        error_message   TEXT,
+        issued_by       TEXT REFERENCES users(id),
+        issued_at       TEXT NOT NULL DEFAULT (datetime('now')),
+        ack_at          TEXT,
+        completed_at    TEXT,
+        synced          INTEGER NOT NULL DEFAULT 0,
+        synced_at       TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_device_commands_device_status ON device_commands(device_id, status);
+      CREATE TABLE IF NOT EXISTS device_audit_log (
+        id          TEXT PRIMARY KEY,
+        tenant_id   TEXT NOT NULL,
+        device_id   TEXT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+        actor_id    TEXT REFERENCES users(id) ON DELETE SET NULL,
+        event_type  TEXT NOT NULL,
+        details     TEXT,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+        synced      INTEGER NOT NULL DEFAULT 0,
+        synced_at   TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_device_audit_log_device ON device_audit_log(device_id, created_at);
     `);
   } catch (sErr: any) {
     console.error('[database] Shifts/expenses/transfers migration failed:', sErr.message);
