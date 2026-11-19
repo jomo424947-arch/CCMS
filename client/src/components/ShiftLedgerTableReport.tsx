@@ -598,9 +598,9 @@ export function ShiftLedgerTableReport({ summaryData, onClose }: ShiftLedgerTabl
             style={{
               padding: '4px 10px',
               fontSize: '11px',
-              border: '1px solid #0284c7',
+              border: '1px solid #9E6B12',
               background: '#f0f9ff',
-              color: '#0284c7',
+              color: '#9E6B12',
               borderRadius: '4px',
               cursor: 'pointer',
               fontWeight: 700,
@@ -1086,7 +1086,7 @@ export function ShiftLedgerTableReport({ summaryData, onClose }: ShiftLedgerTabl
               if (!isSectionExpanded) {
                 return (
                   <tr style={{ background: '#a6c8e0', borderBottom: '1px solid #000000', fontWeight: 800 }}>
-                    <td style={{ border: '1px solid #000000', padding: '6px 8px', color: '#0284c7', textAlign: 'center', fontWeight: 900 }}>
+                    <td style={{ border: '1px solid #000000', padding: '6px 8px', color: '#9E6B12', textAlign: 'center', fontWeight: 900 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         {renderSquareToggle(false, () => toggleSection('service'))}
                         <span>service</span>
@@ -1097,7 +1097,7 @@ export function ShiftLedgerTableReport({ summaryData, onClose }: ShiftLedgerTabl
                     <td style={{ border: '1px solid #000000', padding: '6px 8px', textAlign: 'center', fontWeight: 800 }}>Total</td>
                     <td style={{ border: '1px solid #000000', padding: '6px 8px' }}></td>
                     <td style={{ border: '1px solid #000000', padding: '6px 8px' }}></td>
-                    <td style={{ border: '1px solid #000000', padding: '6px 8px', textAlign: 'center', color: reportData.adjustmentsNetTotal >= 0 ? '#0284c7' : '#e11d48', fontWeight: 900 }}>
+                    <td style={{ border: '1px solid #000000', padding: '6px 8px', textAlign: 'center', color: reportData.adjustmentsNetTotal >= 0 ? '#9E6B12' : '#e11d48', fontWeight: 900 }}>
                       {reportData.adjustmentsNetTotal >= 0
                         ? reportData.adjustmentsNetTotal.toFixed(2)
                         : `(${Math.abs(reportData.adjustmentsNetTotal).toFixed(2)})`}
@@ -1118,7 +1118,7 @@ export function ShiftLedgerTableReport({ summaryData, onClose }: ShiftLedgerTabl
                             border: '1px solid #000000',
                             padding: '6px 8px',
                             fontWeight: 900,
-                            color: '#0284c7',
+                            color: '#9E6B12',
                             verticalAlign: 'top',
                             textAlign: 'center',
                             background: '#ffffff',
@@ -1130,14 +1130,14 @@ export function ShiftLedgerTableReport({ summaryData, onClose }: ShiftLedgerTabl
                           </div>
                         </td>
                       )}
-                      <td style={{ border: '1px solid #000000', padding: '6px 8px', fontWeight: 700, color: row.isDeduction ? '#e11d48' : '#0284c7' }}>
+                      <td style={{ border: '1px solid #000000', padding: '6px 8px', fontWeight: 700, color: row.isDeduction ? '#e11d48' : '#9E6B12' }}>
                         {row.category}
                       </td>
                       <td style={{ border: '1px solid #000000', padding: '6px 8px', fontSize: '11px' }}>{row.date}</td>
                       <td style={{ border: '1px solid #000000', padding: '6px 8px' }}>{row.name}</td>
                       <td style={{ border: '1px solid #000000', padding: '6px 8px', textAlign: 'center' }}>{row.qty}</td>
                       <td style={{ border: '1px solid #000000', padding: '6px 8px', textAlign: 'center' }}>{row.price.toFixed(2)}</td>
-                      <td style={{ border: '1px solid #000000', padding: '6px 8px', textAlign: 'center', fontWeight: 800, color: row.isDeduction ? '#e11d48' : '#0284c7' }}>
+                      <td style={{ border: '1px solid #000000', padding: '6px 8px', textAlign: 'center', fontWeight: 800, color: row.isDeduction ? '#e11d48' : '#9E6B12' }}>
                         {row.isDeduction ? `(${row.total.toFixed(2)})` : row.total.toFixed(2)}
                       </td>
                       <td style={{ border: '1px solid #000000', padding: '6px 8px' }}>{row.notes}</td>
@@ -1147,7 +1147,7 @@ export function ShiftLedgerTableReport({ summaryData, onClose }: ShiftLedgerTabl
                     <td colSpan={5} style={{ border: '1px solid #000000', padding: '6px 8px', textAlign: 'center' }}>
                       Total
                     </td>
-                    <td style={{ border: '1px solid #000000', padding: '6px 8px', textAlign: 'center', color: reportData.adjustmentsNetTotal >= 0 ? '#0284c7' : '#e11d48', fontWeight: 900 }}>
+                    <td style={{ border: '1px solid #000000', padding: '6px 8px', textAlign: 'center', color: reportData.adjustmentsNetTotal >= 0 ? '#9E6B12' : '#e11d48', fontWeight: 900 }}>
                       {reportData.adjustmentsNetTotal >= 0
                         ? reportData.adjustmentsNetTotal.toFixed(2)
                         : `(${Math.abs(reportData.adjustmentsNetTotal).toFixed(2)})`}
@@ -1308,7 +1308,7 @@ export function ShiftLedgerTableReport({ summaryData, onClose }: ShiftLedgerTabl
           <span style={{ color: '#64748b', display: 'block', fontSize: '11px' }}>
             {language === 'ar' ? 'العهدة الافتتاحية (+):' : 'Opening Float (+):'}
           </span>
-          <strong style={{ color: '#0284c7', fontSize: '15px' }}>
+          <strong style={{ color: '#9E6B12', fontSize: '15px' }}>
             {formatCurrency(summaryData.opening_cash)}
           </strong>
         </div>

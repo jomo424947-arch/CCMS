@@ -17,7 +17,7 @@ export const RESERVATION_STATUS_META: Record<
   { label: string; color: string; bg: string }
 > = {
   pending: { label: 'Pending', color: 'var(--accent-yellow)', bg: 'rgba(245, 158, 11, 0.10)' },
-  active: { label: 'Active', color: 'var(--accent-cyan)', bg: 'rgba(0, 194, 255, 0.10)' },
+  active: { label: 'Active', color: 'var(--accent-cyan)', bg: 'rgba(223, 168, 66, 0.10)' },
   completed: { label: 'Completed', color: 'var(--accent-green)', bg: 'rgba(34, 197, 94, 0.10)' },
   cancelled: { label: 'Cancelled', color: 'var(--text-secondary)', bg: 'rgba(161, 161, 170, 0.10)' },
 };

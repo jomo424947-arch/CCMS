@@ -53,11 +53,25 @@ function resolveBaseUrl(): string {
 
 const baseURL = resolveBaseUrl();
 
+/** Resolve the WebSocket URL matching the active API server (Web proxy, Electron, or Mobile LAN/Cloud URL). */
+export function resolveWsUrl(path: string): string {
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  if (baseURL && /^https?:\/\//i.test(baseURL)) {
+    const wsBase = baseURL.replace(/^http:/i, 'ws:').replace(/^https:/i, 'wss:');
+    return `${wsBase}${cleanPath}`;
+  }
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}${cleanPath}`;
+  }
+  return `ws://localhost:5000${cleanPath}`;
+}
+
 export const http: AxiosInstance = axios.create({
   baseURL,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true, // Send cookies on every request
-  timeout: 8000, // Fail fast when backend is unreachable
+  timeout: 15000, // Generous timeout for slower LAN/mobile links
 });
 
 // ─── CSRF & Auth Token Storage ─────────────────────────────────────────────
@@ -119,9 +133,15 @@ export function clearStoredTokens() {
 }
 
 export function getStoredCsrfToken(): string | null {
+  // Always prefer the live browser cookie when present so a rotated cookie
+  // never conflicts with a stale in-memory or sessionStorage value.
+  const cookieToken = getCookie('csrf-token');
+  if (cookieToken) {
+    csrfTokenInMemory = cookieToken;
+    return cookieToken;
+  }
   return (
     csrfTokenInMemory ||
-    getCookie('csrf-token') ||
     (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('csrf_token') : null)
   );
 }
@@ -207,7 +227,9 @@ http.interceptors.response.use(
       !originalRequest._retry &&
       !originalRequest.url?.includes('/api/auth/refresh') &&
       !originalRequest.url?.includes('/api/auth/login') &&
-      !originalRequest.url?.includes('/api/auth/status')
+      !originalRequest.url?.includes('/api/auth/status') &&
+      !originalRequest.url?.includes('/api/auth/tenants') &&
+      !originalRequest.url?.includes('/api/auth/register-tenant')
     ) {
       originalRequest._retry = true;
 

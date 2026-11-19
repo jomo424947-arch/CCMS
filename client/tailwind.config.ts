@@ -9,6 +9,10 @@ const config: Config = {
         surface: 'var(--bg-surface)',
         elevated: 'var(--bg-elevated)',
         input: 'var(--bg-input)',
+        brand: {
+          DEFAULT: 'var(--accent-primary)',
+          dim: 'var(--accent-primary-dim)',
+        },
         cyan: {
           DEFAULT: 'var(--accent-cyan)',
           dim: 'var(--accent-cyan-dim)',
@@ -29,8 +33,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ['Space Grotesk', 'sans-serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Plus Jakarta Sans', 'Alexandria', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'Alexandria', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       boxShadow: {

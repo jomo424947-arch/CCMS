@@ -193,8 +193,8 @@ export function TransferSessionModal({
         <div
           style={{
             padding: '12px 14px',
-            background: 'rgba(0, 194, 255, 0.05)',
-            border: '1px solid rgba(0, 194, 255, 0.22)',
+            background: 'rgba(223, 168, 66, 0.05)',
+            border: '1px solid rgba(223, 168, 66, 0.22)',
             borderRadius: '10px',
             display: 'flex',
             flexDirection: 'column',
@@ -220,8 +220,8 @@ export function TransferSessionModal({
                   borderRadius: '12px',
                   fontSize: '11px',
                   fontWeight: 700,
-                  background: 'rgba(0, 194, 255, 0.15)',
-                  border: '1px solid rgba(0, 194, 255, 0.35)',
+                  background: 'rgba(223, 168, 66, 0.15)',
+                  border: '1px solid rgba(223, 168, 66, 0.35)',
                   color: 'var(--accent-cyan)',
                 }}
               >
@@ -282,8 +282,8 @@ export function TransferSessionModal({
         <div
           style={{
             padding: '12px 14px',
-            background: 'rgba(0, 194, 255, 0.05)',
-            border: '1px solid rgba(0, 194, 255, 0.22)',
+            background: 'rgba(223, 168, 66, 0.05)',
+            border: '1px solid rgba(223, 168, 66, 0.22)',
             borderRadius: '10px',
             display: 'flex',
             alignItems: 'center',
@@ -320,7 +320,7 @@ export function TransferSessionModal({
                 padding: '6px 14px',
                 borderRadius: '8px',
                 border: playMode === 'single' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-default)',
-                background: playMode === 'single' ? 'rgba(0, 194, 255, 0.25)' : 'var(--bg-input)',
+                background: playMode === 'single' ? 'rgba(223, 168, 66, 0.25)' : 'var(--bg-input)',
                 color: playMode === 'single' ? '#FFFFFF' : 'var(--text-secondary)',
                 fontWeight: playMode === 'single' ? 700 : 500,
                 fontSize: '12px',
@@ -341,7 +341,7 @@ export function TransferSessionModal({
                 padding: '6px 14px',
                 borderRadius: '8px',
                 border: playMode === 'multiplayer' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-default)',
-                background: playMode === 'multiplayer' ? 'rgba(0, 194, 255, 0.25)' : 'var(--bg-input)',
+                background: playMode === 'multiplayer' ? 'rgba(223, 168, 66, 0.25)' : 'var(--bg-input)',
                 color: playMode === 'multiplayer' ? '#FFFFFF' : 'var(--text-secondary)',
                 fontWeight: playMode === 'multiplayer' ? 700 : 500,
                 fontSize: '12px',
@@ -411,8 +411,8 @@ export function TransferSessionModal({
               display: 'flex',
               flexDirection: 'column',
               gap: '10px',
-              background: 'rgba(0, 194, 255, 0.05)',
-              border: '1px solid rgba(0, 194, 255, 0.25)',
+              background: 'rgba(223, 168, 66, 0.05)',
+              border: '1px solid rgba(223, 168, 66, 0.25)',
               padding: '12px 14px',
               borderRadius: '10px',
             }}
@@ -432,7 +432,7 @@ export function TransferSessionModal({
                   width: '120px',
                   padding: '8px 12px',
                   borderRadius: '8px',
-                  border: '1px solid rgba(0, 194, 255, 0.4)',
+                  border: '1px solid rgba(223, 168, 66, 0.4)',
                   background: 'var(--bg-input)',
                   color: 'var(--accent-cyan)',
                   fontSize: '14px',
@@ -452,7 +452,7 @@ export function TransferSessionModal({
                     padding: '5px 12px',
                     borderRadius: '6px',
                     border: durationMinutes === String(mins) ? '1px solid var(--accent-cyan)' : '1px solid var(--border-default)',
-                    background: durationMinutes === String(mins) ? 'rgba(0, 194, 255, 0.25)' : 'var(--bg-input)',
+                    background: durationMinutes === String(mins) ? 'rgba(223, 168, 66, 0.25)' : 'var(--bg-input)',
                     color: durationMinutes === String(mins) ? '#FFFFFF' : 'var(--text-secondary)',
                     fontSize: '11px',
                     fontWeight: durationMinutes === String(mins) ? 700 : 500,
@@ -508,7 +508,7 @@ export function TransferSessionModal({
                   padding: '4px 10px',
                   borderRadius: '16px',
                   border: filterType === f.id ? '1px solid var(--accent-cyan)' : '1px solid var(--border-default)',
-                  background: filterType === f.id ? 'rgba(0, 194, 255, 0.18)' : 'var(--bg-elevated)',
+                  background: filterType === f.id ? 'rgba(223, 168, 66, 0.18)' : 'var(--bg-elevated)',
                   color: filterType === f.id ? '#FFFFFF' : 'var(--text-secondary)',
                   fontSize: '11px',
                   fontWeight: 600,
@@ -579,14 +579,14 @@ export function TransferSessionModal({
                   style={{
                     padding: '10px',
                     borderRadius: '8px',
-                    background: isSelected ? 'rgba(0, 194, 255, 0.12)' : 'var(--bg-input)',
+                    background: isSelected ? 'rgba(223, 168, 66, 0.12)' : 'var(--bg-input)',
                     border: isSelected ? '2px solid var(--accent-cyan)' : '1px solid var(--border-default)',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '4px',
                     transition: 'all 0.15s ease',
-                    boxShadow: isSelected ? '0 0 12px rgba(0, 194, 255, 0.25)' : 'none',
+                    boxShadow: isSelected ? '0 0 12px rgba(223, 168, 66, 0.25)' : 'none',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

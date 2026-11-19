@@ -23,7 +23,7 @@ export default function AuthPage({ forceView }: AuthPageProps = {}) {
   const { systemName, systemLogoUrl } = useSystemSettings();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { t, language } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
 
   // Determine initial view from URL search params (e.g. ?view=reset&token=…)
   const initialView = (searchParams.get('view') as View | null) ?? 'login';
@@ -271,7 +271,28 @@ export default function AuthPage({ forceView }: AuthPageProps = {}) {
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="auth-page">
-      <div className="auth-card">
+      <div className="auth-card" style={{ position: 'relative' }}>
+        <button
+          type="button"
+          onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+          style={{
+            position: 'absolute',
+            top: '16px',
+            right: '16px',
+            zIndex: 5,
+            padding: '5px 10px',
+            borderRadius: '8px',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-default)',
+            color: 'var(--text-primary)',
+            fontSize: '12px',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          {language === 'en' ? 'العربية' : 'English'}
+        </button>
+
         {/* ─── Right Panel ─────────────────────────────────────── */}
         <section className="auth-right" style={{ flex: 1 }}>
           <div className="auth-form-wrapper">
@@ -279,58 +300,40 @@ export default function AuthPage({ forceView }: AuthPageProps = {}) {
             {/* ── Login ── */}
             {view === 'login' && (
               <>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px' }}>
                   <div
                     style={{
-                      width: '68px',
-                      height: '68px',
-                      borderRadius: '18px',
-                      padding: '3px',
-                      background: 'linear-gradient(135deg, #00E5FF 0%, #6366F1 100%)',
-                      boxShadow: '0 0 28px rgba(0, 229, 255, 0.3)',
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '16px',
+                      overflow: 'hidden',
+                      border: '1px solid var(--border-glow)',
+                      background: '#0B0B0D',
                       marginBottom: '12px',
                     }}
                   >
                     <img
                       src={systemLogoUrl || './ccms-logo.svg'}
-                      alt="Logo"
+                      alt="CCMS Logo"
                       style={{
                         width: '100%',
                         height: '100%',
-                        borderRadius: '15px',
                         objectFit: 'contain',
-                        background: '#060911',
+                        display: 'block',
                       }}
                     />
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span
-                      style={{
-                        fontSize: '22px',
-                        fontWeight: 800,
-                        background: 'linear-gradient(90deg, #FFFFFF 0%, #00E5FF 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        fontFamily: 'Space Grotesk, sans-serif',
-                      }}
-                    >
-                      {systemName || 'CCMS'}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 800,
-                        fontFamily: 'JetBrains Mono, monospace',
-                        padding: '2px 7px',
-                        borderRadius: '999px',
-                        background: 'rgba(0, 229, 255, 0.14)',
-                        border: '1px solid rgba(0, 229, 255, 0.35)',
-                        color: 'var(--accent-cyan)',
-                      }}
-                    >
-                      v2.0 CYBERSHIELD
-                    </span>
-                  </div>
+                  <span
+                    style={{
+                      fontSize: '21px',
+                      fontWeight: 700,
+                      color: 'var(--text-primary)',
+                      letterSpacing: '-0.02em',
+                      fontFamily: 'Plus Jakarta Sans, Alexandria, sans-serif',
+                    }}
+                  >
+                    {systemName || 'CCMS'}
+                  </span>
                 </div>
 
                 <h2 className="auth-form-title" style={{ textAlign: 'center' }}>{t('sign_in_title')}</h2>
@@ -619,12 +622,12 @@ export default function AuthPage({ forceView }: AuthPageProps = {}) {
                 </button>
 
                 <h2 className="auth-form-title">
-                  {language === 'ar' ? 'تفعيل ترخيص السايبر (CCMS)' : 'Activate CCMS License'}
+                  {language === 'ar' ? 'تفعيل حساب الصالة' : 'Activate Lounge License'}
                 </h2>
                 <p className="auth-form-subtitle">
                   {language === 'ar'
-                    ? 'أدخل البريد الإلكتروني للمالك وكلمة المرور السحابية لربط وتفعيل هذا الجهاز بالحساب المطلوب.'
-                    : 'Enter your cloud owner credentials to link and activate this cyber café device.'}
+                    ? 'أدخل البريد الإلكتروني للمالك وكلمة المرور لربط وتفعيل هذا الجهاز.'
+                    : 'Enter your owner account email and password to activate this device.'}
                 </p>
 
                 <form onSubmit={handleActivate} className="auth-form" noValidate>
@@ -641,7 +644,7 @@ export default function AuthPage({ forceView }: AuthPageProps = {}) {
                     />
                   </Field>
 
-                  <Field label={language === 'ar' ? 'كلمة المرور السحابية' : 'Cloud Password'}>
+                  <Field label={language === 'ar' ? 'كلمة المرور' : 'Password'}>
                     <div className="password-wrapper">
                       <input
                         id="auth-activate-password"
@@ -804,14 +807,12 @@ const authStyles = `
 .auth-card {
   display: flex;
   width: 100%;
-  max-width: 460px;
+  max-width: 440px;
   min-height: auto;
-  border-radius: 24px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow:
-    0 0 0 1px rgba(0,212,255,0.08),
-    0 32px 80px rgba(0,0,0,0.5),
-    0 0 80px rgba(0,212,255,0.04);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-card);
 }
 
 /* ─── Left Panel ─────────────────────── */
@@ -820,8 +821,8 @@ const authStyles = `
   display: flex;
   flex-direction: column;
   padding: 48px 40px;
-  background: linear-gradient(145deg, #0a0e1a 0%, #0d1a2b 60%, #091520 100%);
-  border-right: 1px solid rgba(0,212,255,0.08);
+  background: linear-gradient(145deg, #0E0E10 0%, #151518 60%, #0B0B0D 100%);
+  border-right: 1px solid var(--border-default);
   position: relative;
   overflow: hidden;
 }
@@ -833,7 +834,7 @@ const authStyles = `
   left: -100px;
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(223,168,66,0.08) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -846,7 +847,6 @@ const authStyles = `
 .auth-logo-mark {
   font-size: 28px;
   color: var(--accent-primary);
-  filter: drop-shadow(0 0 12px rgba(0,212,255,0.6));
 }
 
 .auth-logo-text {
@@ -1199,8 +1199,8 @@ const authStyles = `
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(0,212,255,0.1);
-  border: 1px solid rgba(0,212,255,0.2);
+  background: var(--accent-primary-dim);
+  border: 1px solid var(--border-glow);
 }
 
 .auth-verify-icon.pulse { animation: pulse 1.5s ease-in-out infinite; }

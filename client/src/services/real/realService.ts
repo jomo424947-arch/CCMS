@@ -125,7 +125,11 @@ export const realService: DataService = {
   },
 
   async registerTenant(payload) {
-    const { data } = await http.post<{ success: boolean; tenant: { id: string; name: string; owner_email: string; plan?: string; expires_at?: string; status?: string } }>('/api/auth/register-tenant', payload);
+    const { data } = await http.post<{ success: boolean; tenant: { id: string; name: string; owner_email: string; plan?: string; expires_at?: string; status?: string; created_at?: string } }>(
+      '/api/auth/register-tenant',
+      payload,
+      { headers: { 'x-super-admin-key': payload.secretKey } }
+    );
     return data;
   },
 
@@ -139,6 +143,13 @@ export const realService: DataService = {
   async updateTenantStatus(id: string, updates: { status?: string; plan?: string; expires_at?: string } | string, secretKey: string) {
     const body = typeof updates === 'string' ? { status: updates } : updates;
     const { data } = await http.patch<{ success: boolean; tenant?: any }>(`/api/auth/tenants/${id}/status`, body, {
+      headers: { 'x-super-admin-key': secretKey },
+    });
+    return data;
+  },
+
+  async deleteTenant(id: string, secretKey: string) {
+    const { data } = await http.delete<{ success: boolean; message?: string }>(`/api/auth/tenants/${id}`, {
       headers: { 'x-super-admin-key': secretKey },
     });
     return data;

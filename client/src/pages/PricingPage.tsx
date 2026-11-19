@@ -15,7 +15,7 @@ const TYPE_META: Record<string, { label: string; labelAr: string; icon: string; 
     labelAr: 'أجهزة الكمبيوتر',
     icon: 'desktop_windows',
     color: 'var(--accent-cyan)',
-    gradient: 'linear-gradient(135deg, rgba(0, 194, 255, 0.12) 0%, rgba(0, 112, 255, 0.06) 100%)',
+    gradient: 'linear-gradient(135deg, rgba(223, 168, 66, 0.12) 0%, rgba(0, 112, 255, 0.06) 100%)',
     description: 'PC stations for individual or team play',
     descriptionAr: 'أجهزة الكمبيوتر المكتبية الفردية والجماعية للعب والتصفح',
   },
@@ -24,7 +24,7 @@ const TYPE_META: Record<string, { label: string; labelAr: string; icon: string; 
     labelAr: 'أجهزة الكونسول (PS/Xbox)',
     icon: 'sports_esports',
     color: 'var(--accent-purple)',
-    gradient: 'linear-gradient(135deg, rgba(54, 38, 206, 0.15) 0%, rgba(139, 92, 246, 0.06) 100%)',
+    gradient: 'linear-gradient(135deg, rgba(196, 138, 105, 0.15) 0%, rgba(139, 92, 246, 0.06) 100%)',
     description: 'Console rooms for single or local multiplayer',
     descriptionAr: 'منصات البلايستيشن والإكس بوكس للعب الفردي والمحلي المشترك',
   },
@@ -172,11 +172,11 @@ export default function PricingPage() {
           <span className="material-symbols-outlined" style={{ fontSize: '40px', color: 'var(--text-muted)', display: 'block', marginBottom: '16px' }}>
             devices
           </span>
-          <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px' }}>
+          <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px' }}>
             {language === 'ar' ? 'لم يتم العثور على أجهزة' : 'No devices found'}
           </h3>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
-            {language === 'ar' ? 'أضف أجهزة من صفحة أسطول الأجهزة لتهيئة أسعارها هنا.' : 'Add devices from the Device Fleet page to configure pricing.'}
+            {language === 'ar' ? 'أضف أجهزة من صفحة جميع الأجهزة لتهيئة أسعارها هنا.' : 'Add devices from the All Devices page to configure pricing.'}
           </p>
         </div>
       ) : (
@@ -187,7 +187,7 @@ export default function PricingPage() {
               labelAr: tier.type,
               icon: 'devices',
               color: 'var(--accent-cyan)',
-              gradient: 'linear-gradient(135deg, rgba(0, 194, 255, 0.1), transparent)',
+              gradient: 'linear-gradient(135deg, rgba(223, 168, 66, 0.1), transparent)',
               description: '',
               descriptionAr: '',
             };
@@ -238,7 +238,7 @@ export default function PricingPage() {
 
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                        <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                        <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                           {language === 'ar' ? meta.labelAr : meta.label}
                         </h2>
                       </div>

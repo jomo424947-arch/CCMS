@@ -138,7 +138,7 @@ export function InvoiceDetailsModal({ invoice, onClose, onPaySuccess }: InvoiceD
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{language === 'ar' ? 'طريقة الدفع:' : 'Payment:'}</span>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent-cyan)', background: 'rgba(0, 194, 255, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent-cyan)', background: 'rgba(223, 168, 66, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
               {paymentMethodLabel}
             </span>
           </div>
@@ -280,7 +280,7 @@ export function InvoiceDetailsModal({ invoice, onClose, onPaySuccess }: InvoiceD
           {Boolean(invoice.rounding_delta && invoice.rounding_delta !== 0) && (() => {
             const delta = Number(invoice.rounding_delta || 0);
             return (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: delta < 0 ? 'var(--accent-green)' : '#38bdf8' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: delta < 0 ? 'var(--accent-green)' : '#DFA842' }}>
                 <span>{language === 'ar' ? 'تسوية الفكة / التقريب' : 'Cash Rounding / Change'}</span>
                 <span style={{ fontWeight: 700 }}>
                   {delta < 0 ? `- ${formatCurrency(Math.abs(delta))}` : `+ ${formatCurrency(delta)}`}

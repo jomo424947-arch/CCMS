@@ -37,15 +37,16 @@ export const offlineFirstService: DataService = {
   async startSession(payload) {
     try {
       const session = await realService.startSession(payload);
-      await localDb.setItem('sessions', session);
+      await localDb.setItem('sessions', session).catch(() => {});
       return session;
     } catch (err: any) {
-      // If it's a validation error or HTTP error from backend, rethrow it
-      if (err?.response) throw err;
-      // Fall through to browser offline handling only if backend is unreachable
+      // Rethrow all server errors or network errors when browser is online
+      // so users see the actual error instead of a ghost local-only session.
+      const isTrulyOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      if (err?.response || !isTrulyOffline) throw err;
     }
 
-    // Offline creation logic
+    // True offline fallback
     const localSession: Session = {
       id: crypto.randomUUID(),
       device_id: payload.device_id,
@@ -82,12 +83,12 @@ export const offlineFirstService: DataService = {
   async endSession(id, payload) {
     try {
       const res = await realService.endSession(id, payload);
-      await localDb.setItem('sessions', res.session);
-      await localDb.setItem('invoices', res.invoice);
+      await localDb.setItem('sessions', res.session).catch(() => {});
+      await localDb.setItem('invoices', res.invoice).catch(() => {});
       return res;
     } catch (err: any) {
-      if (err?.response) throw err;
-      // Fall through to browser offline end session
+      const isTrulyOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      if (err?.response || !isTrulyOffline) throw err;
     }
 
     const session = await localDb.getItem<Session>('sessions', id);

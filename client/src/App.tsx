@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import RoomsPage from './pages/RoomsPage';
 import CafeTablesPage from './pages/CafeTablesPage';
 import DevicesPage from './pages/DevicesPage';
+import PCControlPage from './pages/PCControlPage';
 import SessionsPage from './pages/SessionsPage';
 import ProductsPage from './pages/ProductsPage';
 import BillingPage from './pages/BillingPage';
@@ -110,7 +111,7 @@ function ServerOfflineScreen() {
 
         <h2
           style={{
-            fontFamily: "'Space Grotesk', sans-serif",
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
             fontSize: '22px',
             fontWeight: 700,
             color: 'var(--text-primary)',
@@ -177,8 +178,8 @@ function ServerOfflineScreen() {
           style={{
             marginTop: '8px',
             padding: '12px 16px',
-            background: 'rgba(0, 194, 255, 0.05)',
-            border: '1px solid rgba(0, 194, 255, 0.1)',
+            background: 'rgba(223, 168, 66, 0.05)',
+            border: '1px solid rgba(223, 168, 66, 0.1)',
             borderRadius: '10px',
             width: '100%',
           }}
@@ -241,6 +242,7 @@ export default function App() {
         <Route path="/rooms" element={<ProtectedRoute><RoomsPage /></ProtectedRoute>} />
         <Route path="/cafe-tables" element={<ProtectedRoute><CafeTablesPage /></ProtectedRoute>} />
         <Route path="/devices" element={<ProtectedRoute><DevicesPage /></ProtectedRoute>} />
+        <Route path="/pcs" element={<ProtectedRoute><PCControlPage /></ProtectedRoute>} />
         <Route path="/sessions" element={<ProtectedRoute><SessionsPage /></ProtectedRoute>} />
         <Route path="/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
         <Route path="/billing" element={<AdminRoute><BillingPage /></AdminRoute>} />

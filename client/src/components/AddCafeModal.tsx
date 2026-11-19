@@ -264,8 +264,8 @@ export function AddCafeModal({
             width: '38px',
             height: '38px',
             borderRadius: '10px',
-            background: 'linear-gradient(135deg, rgba(0, 194, 255, 0.2), rgba(0, 230, 153, 0.2))',
-            border: '1px solid rgba(0, 194, 255, 0.4)',
+            background: 'linear-gradient(135deg, rgba(223, 168, 66, 0.2), rgba(0, 230, 153, 0.2))',
+            border: '1px solid rgba(223, 168, 66, 0.4)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -281,9 +281,9 @@ export function AddCafeModal({
                 fontWeight: 600,
                 padding: '2px 10px',
                 borderRadius: '12px',
-                background: 'rgba(0, 194, 255, 0.15)',
+                background: 'rgba(223, 168, 66, 0.15)',
                 color: 'var(--accent-cyan)',
-                border: '1px solid rgba(0, 194, 255, 0.3)',
+                border: '1px solid rgba(223, 168, 66, 0.3)',
               }}>
                 {targetName}
               </span>
@@ -337,8 +337,8 @@ export function AddCafeModal({
               alignItems: 'center',
               gap: '8px',
               padding: '4px 12px',
-              background: 'rgba(0, 194, 255, 0.12)',
-              border: '1px solid rgba(0, 194, 255, 0.3)',
+              background: 'rgba(223, 168, 66, 0.12)',
+              border: '1px solid rgba(223, 168, 66, 0.3)',
               borderRadius: '8px',
             }}>
               <span style={{ fontSize: '13px', fontWeight: 700, color: '#fff' }}>
@@ -497,7 +497,7 @@ export function AddCafeModal({
                   fontSize: '12px',
                   fontWeight: 600,
                   border: activeFilter === 'all' ? '1px solid var(--accent-cyan)' : '1px solid var(--border-default)',
-                  background: activeFilter === 'all' ? 'rgba(0, 194, 255, 0.15)' : 'var(--bg-surface)',
+                  background: activeFilter === 'all' ? 'rgba(223, 168, 66, 0.15)' : 'var(--bg-surface)',
                   color: activeFilter === 'all' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
                   cursor: 'pointer',
                   display: 'inline-flex',
@@ -699,9 +699,9 @@ export function AddCafeModal({
                               fontWeight: 600,
                               padding: '2px 8px',
                               borderRadius: '10px',
-                              background: 'rgba(0, 194, 255, 0.1)',
+                              background: 'rgba(223, 168, 66, 0.1)',
                               color: 'var(--accent-cyan)',
-                              border: '1px solid rgba(0, 194, 255, 0.2)',
+                              border: '1px solid rgba(223, 168, 66, 0.2)',
                             }}>
                               {language === 'ar' ? `المخزون: ${stockNum}` : `Stock: ${stockNum}`}
                             </span>
@@ -931,8 +931,8 @@ export function AddCafeModal({
             {rate > 0 ? (
               <div style={{
                 padding: '10px 12px',
-                background: 'linear-gradient(135deg, rgba(0, 194, 255, 0.08) 0%, rgba(0, 102, 255, 0.03) 100%)',
-                border: '1px solid rgba(0, 194, 255, 0.25)',
+                background: 'linear-gradient(135deg, rgba(223, 168, 66, 0.08) 0%, rgba(223, 168, 66, 0.03) 100%)',
+                border: '1px solid rgba(223, 168, 66, 0.25)',
                 borderRadius: '8px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1174,10 +1174,10 @@ export function AddCafeModal({
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '10px 14px',
-                background: 'linear-gradient(135deg, rgba(0, 194, 255, 0.12) 0%, rgba(0, 230, 153, 0.08) 100%)',
-                border: '1.5px solid rgba(0, 194, 255, 0.35)',
+                background: 'linear-gradient(135deg, rgba(223, 168, 66, 0.12) 0%, rgba(0, 230, 153, 0.08) 100%)',
+                border: '1.5px solid rgba(223, 168, 66, 0.35)',
                 borderRadius: '8px',
-                boxShadow: '0 0 12px rgba(0, 194, 255, 0.12)',
+                boxShadow: '0 0 12px rgba(223, 168, 66, 0.12)',
               }}
             >
               <div>
@@ -1194,7 +1194,7 @@ export function AddCafeModal({
                 fontWeight: 900,
                 color: 'var(--accent-cyan)',
                 letterSpacing: '-0.5px',
-                textShadow: '0 0 10px rgba(0, 194, 255, 0.3)',
+                textShadow: '0 0 10px rgba(223, 168, 66, 0.3)',
               }}>
                 {formatCurrency(grandTotalSoFar)}
               </div>

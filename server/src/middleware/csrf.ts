@@ -54,7 +54,8 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
 
   const isSuperAdminExempt =
     req.path === '/api/auth/register-tenant' ||
-    (req.path.startsWith('/api/auth/tenants/') && req.path.endsWith('/status'));
+    req.path === '/api/auth/tenants' ||
+    req.path.startsWith('/api/auth/tenants/');
 
   if (
     safeMethods.includes(req.method) ||

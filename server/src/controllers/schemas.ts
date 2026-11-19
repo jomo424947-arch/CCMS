@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+const emptyToUndefined = (val: unknown) => (val === '' ? undefined : val);
+const emptyToNull = (val: unknown) => (val === '' || val === undefined ? null : val);
+
 export const loginSchema = z.object({
   email: z.string().email('Valid email required'),
   password: z.string().min(1, 'Password required'),
@@ -26,24 +29,30 @@ export const verifyEmailSchema = z.object({
 });
 
 export const createDeviceSchema = z.object({
-  name: z.string().min(1, 'Name required').max(60),
+  name: z.string().trim().min(1, 'Name required').max(60),
   type: z.enum(['pc', 'console', 'vr', 'table']).default('pc'),
-  hourly_rate: z.number().nonnegative().default(0),
-  hourly_rate_multi: z.number().nonnegative().optional(),
+  hourly_rate: z.coerce.number().nonnegative().default(0),
+  hourly_rate_multi: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
   specs: z.record(z.unknown()).optional().nullable(),
-  is_managed: z.boolean().optional().default(false),
-  device_number: z.number().int().positive().optional().nullable(),
+  is_managed: z.boolean().optional(),
+  device_number: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? null : Number(val)),
+    z.number().int().positive().nullable().optional()
+  ),
 });
 
 export const updateDeviceSchema = z.object({
-  name: z.string().min(1).max(60).optional(),
+  name: z.string().trim().min(1).max(60).optional(),
   type: z.enum(['pc', 'console', 'vr', 'table']).optional(),
   status: z.enum(['available', 'in_use', 'reserved', 'offline']).optional(),
-  hourly_rate: z.number().nonnegative().optional(),
-  hourly_rate_multi: z.number().nonnegative().optional(),
+  hourly_rate: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
+  hourly_rate_multi: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
   specs: z.record(z.unknown()).optional().nullable(),
   is_managed: z.boolean().optional(),
-  device_number: z.number().int().positive().optional().nullable(),
+  device_number: z.preprocess(
+    (val) => (val === '' || val === null ? null : val === undefined ? undefined : Number(val)),
+    z.number().int().positive().nullable().optional()
+  ),
 });
 
 export const generatePairingCodeSchema = z.object({
@@ -101,16 +110,22 @@ export const bulkDeviceCommandSchema = z.object({
 
 export const startSessionSchema = z.object({
   device_id: z.string().uuid('Valid device_id required'),
-  customer_id: z.string().uuid().optional().nullable(),
-  customer_username: z.string().regex(/^[a-zA-Z0-9_]+$/, 'Username must be alphanumeric and underscores only, no spaces').min(1).max(60).optional().nullable(),
-  customer_name: z.string().max(120).optional().nullable(),
-  customer_phone: z.string().max(40).optional(),
+  customer_id: z.preprocess(emptyToNull, z.string().uuid().nullable().optional()),
+  customer_username: z.preprocess(
+    emptyToNull,
+    z.string().regex(/^[a-zA-Z0-9_]+$/, 'Username must be alphanumeric and underscores only, no spaces').min(1).max(60).nullable().optional()
+  ),
+  customer_name: z.preprocess(emptyToUndefined, z.string().max(120).nullable().optional()),
+  customer_phone: z.preprocess(emptyToUndefined, z.string().max(40).optional()),
   session_type: z.enum(['open', 'fixed']).default('open'),
   play_mode: z.enum(['single', 'multiplayer']).default('single'),
-  started_at: z.string().optional(),
-  scheduled_end: z.string().optional(),
-  hourly_rate_override: z.number().nonnegative().optional().nullable(),
-  grace_period_minutes: z.number().int().nonnegative().default(0),
+  started_at: z.preprocess(emptyToUndefined, z.string().optional()),
+  scheduled_end: z.preprocess(emptyToUndefined, z.string().optional()),
+  hourly_rate_override: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.coerce.number().nonnegative().nullable().optional()
+  ),
+  grace_period_minutes: z.coerce.number().int().nonnegative().default(0),
 });
 
 export const transferSessionSchema = z.object({
@@ -201,20 +216,29 @@ export const pauseSessionSchema = z.object({
 });
 
 export const createRoomSchema = z.object({
-  name: z.string().min(1, 'Name required').max(100),
+  name: z.string().trim().min(1, 'Name required').max(100),
   icon: z.string().max(60).optional().default('sports_esports'),
-  device_id: z.string().uuid().optional().nullable(),
+  device_id: z.preprocess(emptyToNull, z.string().uuid().nullable().optional()),
   type: z.enum(['pc', 'console', 'vr', 'table']).optional().default('console'),
-  hourly_rate: z.number().nonnegative().optional().default(20),
-  hourly_rate_multi: z.number().nonnegative().optional().default(30),
+  hourly_rate: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined || Number.isNaN(Number(val)) ? 20 : Number(val)),
+    z.number().nonnegative().default(20)
+  ),
+  hourly_rate_multi: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined || Number.isNaN(Number(val)) ? 30 : Number(val)),
+    z.number().nonnegative().default(30)
+  ),
 });
 
 export const updateRoomSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
+  name: z.string().trim().min(1).max(100).optional(),
   icon: z.string().max(60).optional(),
-  device_id: z.string().uuid().optional().nullable(),
-  hourly_rate: z.number().nonnegative().optional(),
-  hourly_rate_multi: z.number().nonnegative().optional(),
+  device_id: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.string().uuid().nullable().optional()
+  ),
+  hourly_rate: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
+  hourly_rate_multi: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
 });
 
 export const startShiftSchema = z.object({

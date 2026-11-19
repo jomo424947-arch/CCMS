@@ -34,11 +34,11 @@ export function HeatStrip({ counts }: HeatStripProps) {
                     ? 'rgba(255, 255, 255, 0.04)'
                     : `rgba(0, 194, 255, ${0.18 + intensity * 0.82})`,
                 boxShadow: isHovered
-                  ? '0 0 12px rgba(0, 194, 255, 0.6)'
+                  ? '0 0 12px rgba(223, 168, 66, 0.6)'
                   : intensity > 0.6
                   ? `0 0 8px rgba(0, 194, 255, ${intensity * 0.4})`
                   : undefined,
-                border: isHovered ? '1px solid #00C2FF' : 'none',
+                border: isHovered ? '1px solid #DFA842' : 'none',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 transform: isHovered ? 'scale(1.15)' : 'none',

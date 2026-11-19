@@ -29,9 +29,9 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
 
 const FALLBACK_RELEASE: LatestReleaseInfo = {
   version: 'v2.0.0',
-  name: 'CCMS v2.0.0 — CyberShield Device Control Edition',
+  name: 'CCMS v2.0.0 — الإصدار الجديد',
   publishedAt: new Date().toISOString(),
-  body: 'محرك التحكم وإنفاذ قفل الشاشات للأجهزة (Ed25519)، المزامنة السحابية الفورية مع Supabase، وتحديث الهوية البصرية الجديدة.',
+  body: 'التحكم الكامل بأجهزة الكمبيوتر وقفل الشاشات تلقائياً، النسخ الاحتياطي السحابي، وتصميم جديد بالكامل.',
   htmlUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`,
   installerUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/v2.0.0/CCMS-Setup-2.0.0.exe`,
   installerName: 'CCMS-Setup-2.0.0.exe',

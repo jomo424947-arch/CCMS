@@ -74,6 +74,8 @@ export default function RoomsPage() {
   const [editingRoom, setEditingRoom] = useState<GamingRoom | null>(null);
   const [deletingRoom, setDeletingRoom] = useState<GamingRoom | null>(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
+  const [resetDeviceTarget, setResetDeviceTarget] = useState<Device | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
 
   // Session targets
   const [startTarget, setStartTarget] = useState<Device | null>(null);
@@ -120,6 +122,7 @@ export default function RoomsPage() {
       setEditingRoom(null);
     } catch (err) {
       toast(apiErrorMessage(err, 'Could not save room'), 'error');
+      throw err;
     }
   };
 
@@ -144,20 +147,37 @@ export default function RoomsPage() {
       if (session) {
         setEndTarget(session);
       } else {
-        if (confirm(`Device ${device.name} is marked "In Use" but has no active session. Reset status to "Available"?`)) {
-          try {
-            await dataService.updateDevice(device.id, { status: 'available' });
-            toast(`Reset ${device.name} to available`, 'success');
-            refetch();
-          } catch (err) {
-            toast('Failed to reset device status', 'error');
-          }
-        }
+        setResetDeviceTarget(device);
       }
     } else if (device.status === 'available') {
       setStartTarget(device);
     } else {
-      toast(`${device.name} is ${device.status} — manage it from Settings.`, 'info');
+      toast(
+        language === 'ar'
+          ? `الجهاز ${device.name} حالته (${device.status}) — يمكنك تعديله من الإعدادات.`
+          : `${device.name} is ${device.status} — manage it from Settings.`,
+        'info'
+      );
+    }
+  };
+
+  const handleConfirmResetDevice = async () => {
+    if (!resetDeviceTarget) return;
+    setResetLoading(true);
+    try {
+      await dataService.updateDevice(resetDeviceTarget.id, { status: 'available' });
+      toast(
+        language === 'ar'
+          ? `تمت إعادة تعيين ${resetDeviceTarget.name} إلى متاح`
+          : `Reset ${resetDeviceTarget.name} to available`,
+        'success'
+      );
+      setResetDeviceTarget(null);
+      refetch();
+    } catch (err) {
+      toast(apiErrorMessage(err, 'Failed to reset device status'), 'error');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -396,7 +416,7 @@ export default function RoomsPage() {
                             transition: 'all 0.2s ease',
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(0, 194, 255, 0.15)';
+                            e.currentTarget.style.background = 'rgba(223, 168, 66, 0.15)';
                             e.currentTarget.style.color = 'var(--accent-cyan)';
                           }}
                           onMouseLeave={(e) => {
@@ -453,7 +473,7 @@ export default function RoomsPage() {
                       </span>
                       <span
                         style={{
-                          fontFamily: 'Space Grotesk, sans-serif',
+                          fontFamily: 'Plus Jakarta Sans, sans-serif',
                           fontSize: '32px',
                           fontWeight: 900,
                           color: '#FFFFFF',
@@ -572,11 +592,11 @@ export default function RoomsPage() {
                     }
                     style={{
                       padding: '10px 12px',
-                      background: currentPlayMode === 'multiplayer' ? 'rgba(168, 85, 247, 0.08)' : 'rgba(0, 194, 255, 0.08)',
+                      background: currentPlayMode === 'multiplayer' ? 'rgba(168, 85, 247, 0.08)' : 'rgba(223, 168, 66, 0.08)',
                       borderRadius: '10px',
                       border: currentPlayMode === 'multiplayer'
                         ? '1px solid rgba(168, 85, 247, 0.35)'
-                        : '1px solid rgba(0, 194, 255, 0.25)',
+                        : '1px solid rgba(223, 168, 66, 0.25)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -618,10 +638,10 @@ export default function RoomsPage() {
                         textAlign: 'center',
                         fontSize: '12px',
                         color: 'var(--accent-cyan)',
-                        border: '1px dashed rgba(0, 194, 255, 0.3)',
+                        border: '1px dashed rgba(223, 168, 66, 0.3)',
                         borderRadius: '8px',
                         cursor: 'pointer',
-                        background: 'rgba(0, 194, 255, 0.05)',
+                        background: 'rgba(223, 168, 66, 0.05)',
                       }}
                     >
                       {language === 'ar' ? '+ تعيين جهاز للغرفة' : '+ Assign Device'}
@@ -755,8 +775,8 @@ export default function RoomsPage() {
                           style={{
                             padding: '4px 8px',
                             borderRadius: '6px',
-                            border: '1px solid rgba(0, 194, 255, 0.4)',
-                            background: 'rgba(0, 194, 255, 0.1)',
+                            border: '1px solid rgba(223, 168, 66, 0.4)',
+                            background: 'rgba(223, 168, 66, 0.1)',
                             color: 'var(--accent-cyan)',
                             fontSize: '11px',
                             cursor: 'pointer',
@@ -781,9 +801,9 @@ export default function RoomsPage() {
                         width: '100%',
                         padding: '12px 16px',
                         borderRadius: '10px',
-                        border: '1px solid rgba(0, 102, 255, 0.4)',
-                        background: 'rgba(0, 102, 255, 0.15)',
-                        color: '#38bdf8',
+                        border: '1px solid rgba(223, 168, 66, 0.4)',
+                        background: 'rgba(223, 168, 66, 0.15)',
+                        color: '#DFA842',
                         fontSize: '13px',
                         fontWeight: 700,
                         cursor: 'pointer',
@@ -791,16 +811,16 @@ export default function RoomsPage() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '8px',
-                        boxShadow: '0 4px 14px rgba(0, 102, 255, 0.2)',
+                        boxShadow: '0 4px 14px rgba(223, 168, 66, 0.2)',
                         transition: 'background 0.2s, box-shadow 0.2s',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(0, 102, 255, 0.3)';
-                        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 102, 255, 0.4)';
+                        e.currentTarget.style.background = 'rgba(223, 168, 66, 0.3)';
+                        e.currentTarget.style.boxShadow = '0 4px 20px rgba(223, 168, 66, 0.4)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(0, 102, 255, 0.15)';
-                        e.currentTarget.style.boxShadow = '0 4px 14px rgba(0, 102, 255, 0.2)';
+                        e.currentTarget.style.background = 'rgba(223, 168, 66, 0.15)';
+                        e.currentTarget.style.boxShadow = '0 4px 14px rgba(223, 168, 66, 0.2)';
                       }}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
@@ -919,6 +939,31 @@ export default function RoomsPage() {
           }}
         />
       )}
+
+      {/* Stranded Device Reset Modal */}
+      {resetDeviceTarget && (
+        <Modal
+          open
+          title={language === 'ar' ? `إعادة تعيين حالة الجهاز · ${resetDeviceTarget.name}` : `Reset Device Status · ${resetDeviceTarget.name}`}
+          onClose={() => setResetDeviceTarget(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setResetDeviceTarget(null)} disabled={resetLoading} style={{ fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}>
+                {t('cancel')}
+              </Button>
+              <Button loading={resetLoading} onClick={handleConfirmResetDevice} style={{ fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}>
+                {language === 'ar' ? 'تحويل إلى متاح' : 'Reset to Available'}
+              </Button>
+            </>
+          }
+        >
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
+            {language === 'ar'
+              ? `الجهاز (${resetDeviceTarget.name}) مسجل كـ "مشغول" ولكن لا توجد جلسة نشطة مرتبطة به حالياً. هل تريد إعادة تعيين حالته إلى "متاح"؟`
+              : `Device (${resetDeviceTarget.name}) is marked "In Use" but has no active session. Reset status to "Available"?`}
+          </p>
+        </Modal>
+      )}
     </Layout>
   );
 }
@@ -942,18 +987,20 @@ function RoomFormModal({
     deviceType?: DeviceType;
     hourlyRate: number;
     hourlyRateMulti: number;
-  }) => void;
+  }) => Promise<void>;
 }) {
   const { t, language, isRtl } = useLanguage();
-  const [name, setName] = useState(initial?.name ?? `غرفة ${rooms.length + 1}`);
+  const [name, setName] = useState(initial?.name ?? (language === 'ar' ? `غرفة ${rooms.length + 1}` : `Room ${rooms.length + 1}`));
   const [icon, setIcon] = useState(initial?.icon ?? 'sports_esports');
   const [deviceId, setDeviceId] = useState(initial?.device_id ?? '');
-  const [deviceType, setDeviceType] = useState<DeviceType>('console');
 
-  // Pre-populate rates from the assigned device (if editing an existing room)
+  // Pre-populate rates and type from the assigned device (if editing an existing room)
   const existingDevice = initial?.device_id ? devices.find((d) => d.id === initial.device_id) : null;
-  const [hourlyRate, setHourlyRate] = useState<number>(existingDevice?.hourly_rate ?? 20);
-  const [hourlyRateMulti, setHourlyRateMulti] = useState<number>(existingDevice?.hourly_rate_multi ?? 30);
+  const [deviceType, setDeviceType] = useState<DeviceType>(existingDevice?.type ?? 'console');
+  const [hourlyRateInput, setHourlyRateInput] = useState<string>(String(existingDevice?.hourly_rate ?? 20));
+  const [hourlyRateMultiInput, setHourlyRateMultiInput] = useState<string>(String(existingDevice?.hourly_rate_multi ?? 30));
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // When device selection changes, update rate fields to match the selected device
   const handleDeviceChange = (newDeviceId: string) => {
@@ -961,25 +1008,44 @@ function RoomFormModal({
     if (newDeviceId) {
       const dev = devices.find((d) => d.id === newDeviceId);
       if (dev) {
-        setHourlyRate(dev.hourly_rate);
-        setHourlyRateMulti(dev.hourly_rate_multi);
+        setHourlyRateInput(String(dev.hourly_rate ?? 20));
+        setHourlyRateMultiInput(String(dev.hourly_rate_multi ?? dev.hourly_rate ?? 30));
         setDeviceType(dev.type);
       }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const parsedRate = parseFloat(hourlyRateInput);
+  const parsedRateMulti = parseFloat(hourlyRateMultiInput);
+  const ratesValid = Number.isFinite(parsedRate) && parsedRate >= 0 && Number.isFinite(parsedRateMulti) && parsedRateMulti >= 0;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-    onSave({
-      id: initial?.id,
-      name: name.trim(),
-      icon,
-      deviceId: deviceId || null,
-      deviceType,
-      hourlyRate,
-      hourlyRateMulti,
-    });
+    setErrorMsg(null);
+    if (!name.trim()) {
+      setErrorMsg(language === 'ar' ? 'يرجى إدخال اسم الغرفة.' : 'Please enter a room name.');
+      return;
+    }
+    if (!ratesValid) {
+      setErrorMsg(language === 'ar' ? 'يرجى إدخال أسعار ساعة صحيحة (0 أو أكبر).' : 'Please enter valid hourly rates (0 or greater).');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await onSave({
+        id: initial?.id,
+        name: name.trim(),
+        icon,
+        deviceId: deviceId || null,
+        deviceType,
+        hourlyRate: parsedRate,
+        hourlyRateMulti: parsedRateMulti,
+      });
+    } catch (err) {
+      setErrorMsg(apiErrorMessage(err, language === 'ar' ? 'تعذر حفظ الغرفة. حاول مرة أخرى.' : 'Could not save room. Please try again.'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -993,19 +1059,44 @@ function RoomFormModal({
       onClose={onClose}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} style={{ fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}>
+          <Button variant="ghost" onClick={onClose} disabled={submitting} style={{ fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}>
             {t('cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={!name.trim()} style={{ fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}>
+          <Button
+            onClick={handleSubmit}
+            loading={submitting}
+            disabled={!name.trim() || !ratesValid || submitting}
+            style={{ fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}
+          >
             {initial ? t('save') : (language === 'ar' ? 'إضافة الغرفة' : 'Add Room')}
           </Button>
         </>
       }
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        {errorMsg && (
+          <div
+            style={{
+              padding: '10px 14px',
+              borderRadius: '8px',
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              color: '#fca5a5',
+              fontSize: '13px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#ef4444' }}>error</span>
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
         <Input
           label={language === 'ar' ? 'اسم الغرفة / الصالة' : 'Room Name'}
-          placeholder="مثال: غرفة 1، صالة VIP، بلايستيشن 1"
+          placeholder={language === 'ar' ? 'مثال: غرفة 1، صالة VIP، بلايستيشن 1' : 'e.g., Room 1, VIP Lounge, PS5-1'}
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoFocus
@@ -1026,14 +1117,14 @@ function RoomFormModal({
                   height: '44px',
                   borderRadius: '10px',
                   border: icon === item.id ? '2px solid var(--accent-cyan)' : '1px solid rgba(255, 255, 255, 0.1)',
-                  background: icon === item.id ? 'rgba(0, 194, 255, 0.15)' : 'var(--bg-input)',
+                  background: icon === item.id ? 'rgba(223, 168, 66, 0.15)' : 'var(--bg-input)',
                   color: icon === item.id ? 'var(--accent-cyan)' : 'var(--text-secondary)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s ease',
-                  boxShadow: icon === item.id ? '0 0 10px rgba(0, 194, 255, 0.3)' : 'none',
+                  boxShadow: icon === item.id ? '0 0 10px rgba(223, 168, 66, 0.3)' : 'none',
                 }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{item.id}</span>
@@ -1045,8 +1136,8 @@ function RoomFormModal({
         {/* ── Pricing Section ─────────────────────────────────── */}
         <div
           style={{
-            background: 'rgba(0, 194, 255, 0.04)',
-            border: '1px solid rgba(0, 194, 255, 0.15)',
+            background: 'rgba(223, 168, 66, 0.04)',
+            border: '1px solid rgba(223, 168, 66, 0.15)',
             borderRadius: '12px',
             padding: '16px',
             display: 'flex',
@@ -1063,7 +1154,7 @@ function RoomFormModal({
                 fontSize: '13px',
                 fontWeight: 700,
                 color: 'var(--text-primary)',
-                fontFamily: isRtl ? 'Cairo, sans-serif' : 'Space Grotesk, sans-serif',
+                fontFamily: isRtl ? 'Cairo, sans-serif' : 'Plus Jakarta Sans, sans-serif',
               }}
             >
               {language === 'ar' ? 'تسعير الغرفة (بالساعة)' : 'Room Pricing (per hour)'}
@@ -1084,9 +1175,9 @@ function RoomFormModal({
                 <input
                   type="number"
                   min="0"
-                  step="1"
-                  value={hourlyRate}
-                  onChange={(e) => setHourlyRate(Number(e.target.value))}
+                  step="any"
+                  value={hourlyRateInput}
+                  onChange={(e) => setHourlyRateInput(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '10px 14px',
@@ -1136,9 +1227,9 @@ function RoomFormModal({
                 <input
                   type="number"
                   min="0"
-                  step="1"
-                  value={hourlyRateMulti}
-                  onChange={(e) => setHourlyRateMulti(Number(e.target.value))}
+                  step="any"
+                  value={hourlyRateMultiInput}
+                  onChange={(e) => setHourlyRateMultiInput(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '10px 14px',

@@ -1,72 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <linearGradient id="obsidianBase" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#050811" />
-      <stop offset="50%" stop-color="#0B1326" />
-      <stop offset="100%" stop-color="#070B16" />
+    <linearGradient id="obsidianBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181B" />
+      <stop offset="100%" stop-color="#0B0B0D" />
     </linearGradient>
-    <linearGradient id="cyberRim" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00F0FF" />
-      <stop offset="50%" stop-color="#00A8FF" />
-      <stop offset="100%" stop-color="#6366F1" />
+    <linearGradient id="goldLeaf" x1="15%" y1="10%" x2="85%" y2="90%">
+      <stop offset="0%" stop-color="#F5D58E" />
+      <stop offset="52%" stop-color="#DFA842" />
+      <stop offset="100%" stop-color="#B67B1B" />
     </linearGradient>
-    <linearGradient id="shieldCore" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#00E5FF" stop-opacity="0.28" />
-      <stop offset="100%" stop-color="#4F46E5" stop-opacity="0.08" />
-    </linearGradient>
-    <linearGradient id="controllerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00F0FF" />
-      <stop offset="60%" stop-color="#00B4FF" />
-      <stop offset="100%" stop-color="#8B5CF6" />
-    </linearGradient>
-    <filter id="cyberGlow" x="-25%" y="-25%" width="150%" height="150%">
-      <feGaussianBlur stdDeviation="10" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
   </defs>
 
-  <rect width="512" height="512" rx="116" fill="url(#obsidianBase)" />
-  <rect x="8" y="8" width="496" height="496" rx="108" fill="none" stroke="rgba(0, 229, 255, 0.22)" stroke-width="3" />
-
-  <polygon
-    points="256,38 442,136 442,340 256,468 70,340 70,136"
-    fill="url(#shieldCore)"
-    stroke="url(#cyberRim)"
-    stroke-width="16"
-    stroke-linejoin="round"
-    filter="url(#cyberGlow)"
-  />
-
-  <polygon
-    points="256,74 410,156 410,324 256,430 102,324 102,156"
-    fill="#070C18"
-    stroke="rgba(0, 240, 255, 0.38)"
-    stroke-width="4"
-    stroke-linejoin="round"
-  />
+  <rect width="512" height="512" rx="120" fill="url(#obsidianBg)" />
+  <rect x="14" y="14" width="484" height="484" rx="108" fill="none" stroke="#DFA842" stroke-opacity="0.28" stroke-width="4" />
 
   <path
-    d="M204,195 L204,154 C204,124 308,124 308,154 L308,195"
+    d="M352 162 A136 136 0 1 0 352 350"
     fill="none"
-    stroke="#00F0FF"
-    stroke-width="16"
+    stroke="url(#goldLeaf)"
+    stroke-width="40"
     stroke-linecap="round"
-    filter="url(#cyberGlow)"
   />
-
-  <g transform="translate(0, 14)">
-    <path
-      d="M158,192 C134,192 108,224 114,296 C118,338 146,356 172,344 C196,332 212,302 256,302 C300,302 316,332 340,344 C366,356 394,338 398,296 C404,224 378,192 354,192 Z"
-      fill="url(#controllerGrad)"
-    />
-    <rect x="166" y="238" width="38" height="12" rx="4" fill="#060A14" />
-    <rect x="179" y="225" width="12" height="38" rx="4" fill="#060A14" />
-    <circle cx="326" cy="230" r="8" fill="#060A14" />
-    <circle cx="346" cy="248" r="8" fill="#060A14" />
-    <circle cx="306" cy="248" r="8" fill="#060A14" />
-    <circle cx="326" cy="266" r="8" fill="#060A14" />
-    <circle cx="256" cy="244" r="22" fill="#060A14" stroke="#FFFFFF" stroke-width="4" />
-    <circle cx="256" cy="239" r="7" fill="#00F0FF" />
-    <path d="M251,244 L261,244 L264,257 L248,257 Z" fill="#00F0FF" />
-  </g>
+  <path
+    d="M312 204 A78 78 0 1 0 312 308"
+    fill="none"
+    stroke="#F5D58E"
+    stroke-opacity="0.45"
+    stroke-width="20"
+    stroke-linecap="round"
+  />
+  <rect
+    x="330"
+    y="232"
+    width="48"
+    height="48"
+    rx="8"
+    transform="rotate(45 354 256)"
+    fill="url(#goldLeaf)"
+  />
 </svg>

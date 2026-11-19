@@ -94,14 +94,38 @@ export const CONSOLE_PRESETS: ConsolePreset[] = [
 interface DeviceFormModalProps {
   title: string;
   initial: Device | null;
+  defaultType?: DeviceType;
   existingDevices?: Device[];
   onClose: () => void;
-  onDone: (patch: Record<string, unknown>) => void;
+  onDone: (patch: Record<string, unknown>) => Promise<void> | void;
 }
+
+function getNextPcNumber(devices: Device[]): number {
+  const used = new Set<number>();
+  for (const d of devices) {
+    if (typeof d.device_number === 'number' && d.device_number > 0) {
+      used.add(d.device_number);
+    } else if (d.type === 'pc') {
+      const m = d.name.match(/(\d+)$/);
+      if (m) used.add(parseInt(m[1], 10));
+    }
+  }
+  let next = 1;
+  while (used.has(next)) next++;
+  return next;
+}
+
+const DEFAULT_RATES_BY_TYPE: Record<DeviceType, { rate: number; rateMulti: number }> = {
+  pc: { rate: 30, rateMulti: 40 },
+  console: { rate: 50, rateMulti: 70 },
+  table: { rate: 40, rateMulti: 40 },
+  vr: { rate: 60, rateMulti: 80 },
+};
 
 export function DeviceFormModal({
   title,
   initial,
+  defaultType = 'console',
   existingDevices = [],
   onClose,
   onDone,
@@ -109,8 +133,17 @@ export function DeviceFormModal({
   const { t, language, isRtl } = useLanguage();
   const isAr = language === 'ar';
 
-  const [name, setName] = useState(initial?.name ?? '');
-  const [type, setType] = useState<DeviceType>(initial?.type ?? 'console');
+  const resolvedInitialType: DeviceType = initial?.type ?? defaultType;
+  const suggestedPcNum = !initial ? getNextPcNumber(existingDevices) : null;
+
+  const [name, setName] = useState(() => {
+    if (initial?.name) return initial.name;
+    if (resolvedInitialType === 'pc' && suggestedPcNum) {
+      return `PC-${String(suggestedPcNum).padStart(2, '0')}`;
+    }
+    return '';
+  });
+  const [type, setType] = useState<DeviceType>(resolvedInitialType);
 
   // Console specific states
   const initialSpecs = (initial?.specs as Record<string, string>) || {};
@@ -127,14 +160,22 @@ export function DeviceFormModal({
   });
 
   const [customConsoleModel, setCustomConsoleModel] = useState(initialSpecs.custom_model || '');
-  const [hourlyRate, setHourlyRate] = useState(String(initial?.hourly_rate ?? ''));
-  const [hourlyRateMulti, setHourlyRateMulti] = useState(String(initial?.hourly_rate_multi ?? ''));
+  const [hourlyRate, setHourlyRate] = useState(() =>
+    initial?.hourly_rate !== undefined && initial?.hourly_rate !== null
+      ? String(initial.hourly_rate)
+      : String(DEFAULT_RATES_BY_TYPE[resolvedInitialType].rate)
+  );
+  const [hourlyRateMulti, setHourlyRateMulti] = useState(() =>
+    initial?.hourly_rate_multi !== undefined && initial?.hourly_rate_multi !== null
+      ? String(initial.hourly_rate_multi)
+      : String(DEFAULT_RATES_BY_TYPE[resolvedInitialType].rateMulti)
+  );
 
-  // Specs states
-  const [specsCpu, setSpecsCpu] = useState(initialSpecs.CPU || '');
-  const [specsGpu, setSpecsGpu] = useState(initialSpecs.GPU || '');
-  const [specsRam, setSpecsRam] = useState(initialSpecs.RAM || '');
-  const [specsMonitor, setSpecsMonitor] = useState(initialSpecs.Monitor || initialSpecs.screen || '');
+  // Specs states (read both uppercase and lowercase keys)
+  const [specsCpu, setSpecsCpu] = useState(initialSpecs.CPU || initialSpecs.cpu || '');
+  const [specsGpu, setSpecsGpu] = useState(initialSpecs.GPU || initialSpecs.gpu || '');
+  const [specsRam, setSpecsRam] = useState(initialSpecs.RAM || initialSpecs.ram || '');
+  const [specsMonitor, setSpecsMonitor] = useState(initialSpecs.Monitor || initialSpecs.monitor || initialSpecs.screen || '');
   const [specsControllers, setSpecsControllers] = useState(initialSpecs.controllers || '');
   const [specsGames, setSpecsGames] = useState(initialSpecs.games || '');
   const [specsTableSize, setSpecsTableSize] = useState(initialSpecs.table_size || '');
@@ -143,11 +184,14 @@ export function DeviceFormModal({
   const [isManaged, setIsManaged] = useState<boolean>(
     initial?.is_managed !== undefined ? Boolean(initial.is_managed) : true
   );
-  const [deviceNumber, setDeviceNumber] = useState<string>(
-    initial?.device_number ? String(initial.device_number) : ''
-  );
+  const [deviceNumber, setDeviceNumber] = useState<string>(() => {
+    if (initial?.device_number) return String(initial.device_number);
+    if (!initial && resolvedInitialType === 'pc' && suggestedPcNum) return String(suggestedPcNum);
+    return '';
+  });
 
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const [pricingTiers, setPricingTiers] = useState<Record<string, { rate: number; rateMulti: number }>>({});
 
   // Helper to find past rates for this exact console model
@@ -185,11 +229,13 @@ export function DeviceFormModal({
               setHourlyRateMulti(String(cPreset.rateMulti));
             }
           } else {
-            const defaultTier = map[type] || existingDevices.find((d) => d.type === type);
-            if (defaultTier) {
-              setHourlyRate(String(defaultTier.rate || (defaultTier as any).hourly_rate));
-              setHourlyRateMulti(String(defaultTier.rateMulti || (defaultTier as any).hourly_rate_multi));
-            }
+            const tierMatch = map[type];
+            const existingMatch = existingDevices.find((d) => d.type === type);
+            const fallback = DEFAULT_RATES_BY_TYPE[type];
+            const resolvedRate = tierMatch?.rate ?? existingMatch?.hourly_rate ?? fallback.rate;
+            const resolvedMulti = tierMatch?.rateMulti ?? existingMatch?.hourly_rate_multi ?? fallback.rateMulti;
+            setHourlyRate(String(resolvedRate));
+            setHourlyRateMulti(String(resolvedMulti));
           }
         }
       } catch {
@@ -209,6 +255,7 @@ export function DeviceFormModal({
 
   const handleTypeChange = (newType: DeviceType) => {
     setType(newType);
+    setErrorMsg('');
     if (!initial) {
       if (newType === 'console') {
         const preset = getPresetForConsole(consoleModelId);
@@ -216,17 +263,26 @@ export function DeviceFormModal({
           setHourlyRate(String(preset.rate));
           setHourlyRateMulti(String(preset.rateMulti));
         }
-        if (!name) {
+        if (!name || name.startsWith('PC-') || name.startsWith('PC ')) {
           setName(consoleModelId === 'ps5' ? 'PS5 - 01' : consoleModelId === 'ps4' ? 'PS4 - 01' : 'Console - 01');
         }
       } else {
-        const tier = pricingTiers[newType] || existingDevices.find((d) => d.type === newType);
-        if (tier) {
-          setHourlyRate(String((tier as any).rate ?? (tier as any).hourly_rate));
-          setHourlyRateMulti(String((tier as any).rateMulti ?? (tier as any).hourly_rate_multi));
-        }
-        if (!name || name.startsWith('PS') || name.startsWith('Console')) {
-          setName(newType === 'pc' ? 'PC - 01' : newType === 'table' ? 'بلياردو 1' : 'VR - 01');
+        const tierMatch = pricingTiers[newType];
+        const existingMatch = existingDevices.find((d) => d.type === newType);
+        const fallback = DEFAULT_RATES_BY_TYPE[newType];
+        const resolvedRate = tierMatch?.rate ?? existingMatch?.hourly_rate ?? fallback.rate;
+        const resolvedMulti = tierMatch?.rateMulti ?? existingMatch?.hourly_rate_multi ?? fallback.rateMulti;
+        setHourlyRate(String(resolvedRate));
+        setHourlyRateMulti(String(resolvedMulti));
+
+        if (newType === 'pc') {
+          const nextNum = getNextPcNumber(existingDevices);
+          if (!deviceNumber) setDeviceNumber(String(nextNum));
+          if (!name || name.startsWith('PS') || name.startsWith('Console')) {
+            setName(`PC-${String(nextNum).padStart(2, '0')}`);
+          }
+        } else if (!name || name.startsWith('PS') || name.startsWith('Console') || name.startsWith('PC-')) {
+          setName(newType === 'table' ? 'بلياردو 1' : 'VR - 01');
         }
       }
     }
@@ -259,9 +315,13 @@ export function DeviceFormModal({
 
   const handleSubmit = async () => {
     setLoading(true);
+    setErrorMsg('');
     try {
-      const rate = parseFloat(hourlyRate || '0');
-      const rateMulti = parseFloat(hourlyRateMulti || '0');
+      if (!name.trim()) {
+        throw new Error(isAr ? 'برجاء إدخال اسم الجهاز' : 'Please enter a device name');
+      }
+      const rate = parseFloat(hourlyRate === '' ? '0' : hourlyRate);
+      const rateMulti = parseFloat(hourlyRateMulti === '' ? String(rate) : hourlyRateMulti);
       if (Number.isNaN(rate) || rate < 0 || Number.isNaN(rateMulti) || rateMulti < 0) {
         throw new Error(isAr ? 'برجاء إدخال سعر صحيح للساعة' : 'Invalid hourly rate');
       }
@@ -290,7 +350,14 @@ export function DeviceFormModal({
         if (specsControllers) specs.controllers = specsControllers;
       }
 
-      const parsedDevNum = deviceNumber.trim() ? parseInt(deviceNumber.trim(), 10) : null;
+      let parsedDevNum: number | null = null;
+      if (type === 'pc' && deviceNumber.trim()) {
+        const n = parseInt(deviceNumber.trim(), 10);
+        if (Number.isNaN(n) || n <= 0) {
+          throw new Error(isAr ? 'رقم الجهاز يجب أن يكون رقماً صحيحاً أكبر من 0' : 'Device number must be a positive integer');
+        }
+        parsedDevNum = n;
+      }
 
       const patch: Record<string, unknown> = {
         name: name.trim(),
@@ -299,18 +366,25 @@ export function DeviceFormModal({
         hourly_rate_multi: rateMulti,
         specs: Object.keys(specs).length > 0 ? specs : null,
         is_managed: type === 'pc' ? isManaged : false,
-        device_number: type === 'pc' && parsedDevNum && !Number.isNaN(parsedDevNum) ? parsedDevNum : null,
+        device_number: type === 'pc' ? parsedDevNum : null,
       };
 
       await onDone(patch);
-    } catch (err) {
-      // handled by parent
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        (isAr ? 'تعذر حفظ الجهاز' : 'Failed to save device');
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const isValid = name.trim() && !Number.isNaN(parseFloat(hourlyRate)) && !Number.isNaN(parseFloat(hourlyRateMulti));
+  const isValid =
+    Boolean(name.trim()) &&
+    (hourlyRate === '' || !Number.isNaN(parseFloat(hourlyRate))) &&
+    (hourlyRateMulti === '' || !Number.isNaN(parseFloat(hourlyRateMulti)));
 
   return (
     <Modal
@@ -443,8 +517,8 @@ export function DeviceFormModal({
               style={{
                 padding: '12px 14px',
                 borderRadius: '10px',
-                background: 'rgba(0, 194, 255, 0.06)',
-                border: '1px solid rgba(0, 194, 255, 0.25)',
+                background: 'rgba(223, 168, 66, 0.06)',
+                border: '1px solid rgba(223, 168, 66, 0.25)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '10px',
@@ -452,7 +526,7 @@ export function DeviceFormModal({
             >
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#00C2FF' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#DFA842' }}>
                     {isAr ? 'تفعيل نظام الحماية والقفل التلقائي (CCMS Windows Agent)' : 'Enable CCMS Windows Agent Enforcement'}
                   </div>
                   <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
@@ -465,7 +539,7 @@ export function DeviceFormModal({
                   type="checkbox"
                   checked={isManaged}
                   onChange={(e) => setIsManaged(e.target.checked)}
-                  style={{ width: '18px', height: '18px', accentColor: '#00C2FF' }}
+                  style={{ width: '18px', height: '18px', accentColor: '#DFA842' }}
                 />
               </label>
 
@@ -526,6 +600,21 @@ export function DeviceFormModal({
           </div>
         )}
 
+        {errorMsg && (
+          <div
+            style={{
+              padding: '10px 12px',
+              borderRadius: '8px',
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              color: '#f87171',
+              fontSize: '13px',
+              fontWeight: 600,
+            }}
+          >
+            {errorMsg}
+          </div>
+        )}
       </div>
     </Modal>
   );

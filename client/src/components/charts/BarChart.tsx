@@ -90,14 +90,14 @@ export function BarChart({
                   height: `${barHeightPercent}%`,
                   borderRadius: '6px 6px 2px 2px',
                   background: isHovered
-                    ? 'linear-gradient(to top, rgba(0, 194, 255, 0.5), #00C2FF)'
+                    ? 'linear-gradient(to top, rgba(223, 168, 66, 0.5), #DFA842)'
                     : isMax
-                    ? 'linear-gradient(to top, rgba(0, 194, 255, 0.35), rgba(0, 194, 255, 0.85))'
+                    ? 'linear-gradient(to top, rgba(223, 168, 66, 0.35), rgba(223, 168, 66, 0.85))'
                     : d.value > 0
-                    ? 'linear-gradient(to top, rgba(0, 194, 255, 0.12), rgba(0, 194, 255, 0.35))'
+                    ? 'linear-gradient(to top, rgba(223, 168, 66, 0.12), rgba(223, 168, 66, 0.35))'
                     : 'rgba(255, 255, 255, 0.04)',
-                  borderTop: isMax || isHovered ? '1px solid #00C2FF' : 'none',
-                  boxShadow: isMax || isHovered ? '0 0 12px rgba(0, 194, 255, 0.4)' : 'none',
+                  borderTop: isMax || isHovered ? '1px solid #DFA842' : 'none',
+                  boxShadow: isMax || isHovered ? '0 0 12px rgba(223, 168, 66, 0.4)' : 'none',
                   transition: 'all 0.2s ease',
                   transform: isHovered ? 'scaleY(1.04)' : 'none',
                   transformOrigin: 'bottom',

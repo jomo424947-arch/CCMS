@@ -29,23 +29,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const savedFontScale = localStorage.getItem('ccms-font-scale');
     if (savedFontScale) {
       const parsed = parseFloat(savedFontScale);
-      if (!isNaN(parsed) && parsed >= 50 && parsed <= 200) {
+      if (!isNaN(parsed) && parsed >= 90 && parsed <= 112) {
         return parsed;
       }
     }
     return 100;
   });
 
-  const [iconScale, setIconScaleState] = useState<number>(() => {
-    const savedIconScale = localStorage.getItem('ccms-icon-scale');
-    if (savedIconScale) {
-      const parsed = parseFloat(savedIconScale);
-      if (!isNaN(parsed) && parsed >= 50 && parsed <= 200) {
-        return parsed;
-      }
-    }
-    return 100;
-  });
+  const [iconScale, setIconScaleState] = useState<number>(100);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
@@ -57,20 +48,20 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const setFontScale = (scale: number) => {
-    const clamped = Math.min(Math.max(scale, 70), 160);
+    const clamped = Math.min(Math.max(scale, 90), 112);
     setFontScaleState(clamped);
     localStorage.setItem('ccms-font-scale', clamped.toString());
   };
 
-  const setIconScale = (scale: number) => {
-    const clamped = Math.min(Math.max(scale, 70), 160);
-    setIconScaleState(clamped);
-    localStorage.setItem('ccms-icon-scale', clamped.toString());
+  const setIconScale = (_scale: number) => {
+    setIconScaleState(100);
+    localStorage.setItem('ccms-icon-scale', '100');
   };
 
   const resetVisualScale = () => {
     setFontScale(100);
-    setIconScale(100);
+    setIconScaleState(100);
+    localStorage.setItem('ccms-icon-scale', '100');
   };
 
   useEffect(() => {
@@ -79,9 +70,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     const fontFactor = fontScale / 100;
-    const iconFactor = iconScale / 100;
     document.documentElement.style.setProperty('--font-scale', fontFactor.toString());
-    document.documentElement.style.setProperty('--icon-scale', iconFactor.toString());
+    document.documentElement.style.setProperty('--icon-scale', '1');
   }, [fontScale, iconScale]);
 
   return (

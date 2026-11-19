@@ -56,7 +56,7 @@ export default function DownloadPage() {
         color: '#FFFFFF',
         fontFamily: isAr
           ? "'Alexandria', 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif"
-          : "'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+          : "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
         position: 'relative',
         overflowX: 'hidden',
         direction: isAr ? 'rtl' : 'ltr',
@@ -71,7 +71,7 @@ export default function DownloadPage() {
           transform: 'translateX(-50%)',
           width: '900px',
           height: '500px',
-          background: 'radial-gradient(circle, rgba(0, 194, 255, 0.12) 0%, rgba(112, 0, 255, 0.06) 45%, transparent 75%)',
+          background: 'radial-gradient(circle, rgba(223, 168, 66, 0.12) 0%, rgba(112, 0, 255, 0.06) 45%, transparent 75%)',
           pointerEvents: 'none',
           zIndex: 0,
         }}
@@ -119,8 +119,8 @@ export default function DownloadPage() {
                   height: '38px',
                   borderRadius: '10px',
                   objectFit: 'contain',
-                  border: '1px solid rgba(0, 194, 255, 0.3)',
-                  boxShadow: '0 0 15px rgba(0, 194, 255, 0.25)',
+                  border: '1px solid rgba(223, 168, 66, 0.3)',
+                  boxShadow: '0 0 15px rgba(223, 168, 66, 0.25)',
                 }}
               />
             ) : (
@@ -129,12 +129,12 @@ export default function DownloadPage() {
                   width: '38px',
                   height: '38px',
                   borderRadius: '10px',
-                  background: 'linear-gradient(135deg, rgba(0, 194, 255, 0.2) 0%, rgba(112, 0, 255, 0.2) 100%)',
-                  border: '1px solid rgba(0, 194, 255, 0.4)',
+                  background: 'linear-gradient(135deg, rgba(223, 168, 66, 0.2) 0%, rgba(112, 0, 255, 0.2) 100%)',
+                  border: '1px solid rgba(223, 168, 66, 0.4)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#00C2FF',
+                  color: '#DFA842',
                 }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
@@ -156,7 +156,7 @@ export default function DownloadPage() {
               <div
                 style={{
                   fontSize: '11px',
-                  color: '#00C2FF',
+                  color: '#DFA842',
                   fontWeight: 600,
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
@@ -184,7 +184,7 @@ export default function DownloadPage() {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = '#FFFFFF';
-                e.currentTarget.style.borderColor = 'rgba(0, 194, 255, 0.4)';
+                e.currentTarget.style.borderColor = 'rgba(223, 168, 66, 0.4)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = '#A1A1AA';
@@ -201,9 +201,9 @@ export default function DownloadPage() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: 'rgba(0, 194, 255, 0.1)',
-                border: '1px solid rgba(0, 194, 255, 0.3)',
-                color: '#00C2FF',
+                background: 'rgba(223, 168, 66, 0.1)',
+                border: '1px solid rgba(223, 168, 66, 0.3)',
+                color: '#DFA842',
                 padding: '8px 18px',
                 borderRadius: '8px',
                 fontSize: '13px',
@@ -212,12 +212,12 @@ export default function DownloadPage() {
                 transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#00C2FF';
+                e.currentTarget.style.background = '#DFA842';
                 e.currentTarget.style.color = '#000000';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(0, 194, 255, 0.1)';
-                e.currentTarget.style.color = '#00C2FF';
+                e.currentTarget.style.background = 'rgba(223, 168, 66, 0.1)';
+                e.currentTarget.style.color = '#DFA842';
               }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
@@ -246,8 +246,8 @@ export default function DownloadPage() {
               gap: '10px',
               padding: '6px 14px',
               borderRadius: '9999px',
-              background: 'rgba(0, 194, 255, 0.08)',
-              border: '1px solid rgba(0, 194, 255, 0.25)',
+              background: 'rgba(223, 168, 66, 0.08)',
+              border: '1px solid rgba(223, 168, 66, 0.25)',
               marginBottom: '24px',
             }}
           >
@@ -264,7 +264,7 @@ export default function DownloadPage() {
               style={{
                 fontSize: '13px',
                 fontWeight: 600,
-                color: '#00C2FF',
+                color: '#DFA842',
                 fontFamily: "'JetBrains Mono', monospace",
               }}
             >
@@ -321,19 +321,19 @@ export default function DownloadPage() {
           >
             {isAr
               ? 'تحكم متكامل في أجهزة PlayStation والكمبيوتر، مزامنة فورية، وفواتير دقيقة. يتم تحديث رابط التنزيل تلقائياً ومباشرة مع كل إصدار رسمي.'
-              : 'Comprehensive device control, real-time sync, and offline-first stability. The download link automatically reflects the latest official release.'}
+              : 'Complete control for PlayStation and PC stations, automatic backup, and accurate billing — always up to date with the latest official release.'}
           </p>
 
           {/* Main Download Card */}
           <div
             style={{
               background: 'linear-gradient(135deg, rgba(17, 17, 17, 0.9) 0%, rgba(22, 22, 24, 0.95) 100%)',
-              border: '1px solid rgba(0, 194, 255, 0.25)',
+              border: '1px solid rgba(223, 168, 66, 0.25)',
               borderRadius: '20px',
               padding: '36px 40px',
               maxWidth: '560px',
               width: '100%',
-              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 194, 255, 0.08)',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(223, 168, 66, 0.08)',
               position: 'relative',
             }}
           >
@@ -351,22 +351,22 @@ export default function DownloadPage() {
                 width: '100%',
                 padding: '18px 24px',
                 borderRadius: '12px',
-                background: 'linear-gradient(90deg, #00C2FF 0%, #0090D0 100%)',
+                background: 'linear-gradient(90deg, #E8BA62 0%, #C48A2A 100%)',
                 color: '#0A0A0E',
                 textDecoration: 'none',
                 fontSize: '17px',
                 fontWeight: 700,
-                boxShadow: '0 8px 25px rgba(0, 194, 255, 0.35)',
+                boxShadow: '0 8px 25px rgba(223, 168, 66, 0.35)',
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 cursor: 'pointer',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 12px 35px rgba(0, 194, 255, 0.5)';
+                e.currentTarget.style.boxShadow = '0 12px 35px rgba(223, 168, 66, 0.5)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 194, 255, 0.35)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(223, 168, 66, 0.35)';
               }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
@@ -394,7 +394,7 @@ export default function DownloadPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#00C2FF' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#DFA842' }}>
                   description
                 </span>
                 <span>{release?.installerName || 'CCMS-Setup.exe'}</span>
@@ -518,7 +518,7 @@ export default function DownloadPage() {
             <div
               style={{
                 background: '#111111',
-                border: '1px solid rgba(0, 194, 255, 0.15)',
+                border: '1px solid rgba(223, 168, 66, 0.15)',
                 borderRadius: '16px',
                 padding: '28px',
               }}
@@ -534,7 +534,7 @@ export default function DownloadPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span className="material-symbols-outlined" style={{ color: '#00C2FF', fontSize: '22px' }}>
+                  <span className="material-symbols-outlined" style={{ color: '#DFA842', fontSize: '22px' }}>
                     new_releases
                   </span>
                   <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#FFFFFF' }}>
@@ -577,7 +577,7 @@ export default function DownloadPage() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '22px' }}>
-              <span className="material-symbols-outlined" style={{ color: '#00C2FF', fontSize: '24px' }}>
+              <span className="material-symbols-outlined" style={{ color: '#DFA842', fontSize: '24px' }}>
                 install_desktop
               </span>
               <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#FFFFFF' }}>
@@ -615,9 +615,9 @@ export default function DownloadPage() {
                       width: '32px',
                       height: '32px',
                       borderRadius: '8px',
-                      background: 'rgba(0, 194, 255, 0.1)',
-                      border: '1px solid rgba(0, 194, 255, 0.3)',
-                      color: '#00C2FF',
+                      background: 'rgba(223, 168, 66, 0.1)',
+                      border: '1px solid rgba(223, 168, 66, 0.3)',
+                      color: '#DFA842',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -663,7 +663,7 @@ export default function DownloadPage() {
           <div>
             <span
               onClick={() => navigate('/login')}
-              style={{ color: '#00C2FF', cursor: 'pointer', textDecoration: 'none' }}
+              style={{ color: '#DFA842', cursor: 'pointer', textDecoration: 'none' }}
             >
               {isAr ? 'تسجيل الدخول' : 'Sign In'}
             </span>

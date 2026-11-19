@@ -1,16 +1,17 @@
 import { ReactNode } from 'react';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface StatCardProps {
   icon: ReactNode;
   label: string;
   value: string | number;
-  accent: string; // CSS color for the icon circle/border
+  accent: string;
   hint?: string;
-  index?: number; // for staggered animation delay
+  index?: number;
   onClick?: () => void;
 }
 
-function getMaterialIconName(icon: any): string {
+function getMaterialIconName(icon: unknown): string {
   if (typeof icon !== 'string' || !icon) return 'analytics';
   switch (icon) {
     case '✓':
@@ -40,118 +41,96 @@ function getMaterialIconName(icon: any): string {
 }
 
 export function StatCard({ icon, label, value, accent, hint, index = 0, onClick }: StatCardProps) {
+  const isMobile = useIsMobile();
   const iconName = getMaterialIconName(icon);
-
-  // Set default hints matching screenshot design if none provided
-  let displayHint = hint;
-  if (!displayHint) {
-    if (label.toLowerCase().includes('collected')) {
-      displayHint = '+12% vs last shift';
-    } else if (label.toLowerCase().includes('outstanding')) {
-      displayHint = 'Cleared';
-    } else if (label.toLowerCase().includes('revenue')) {
-      displayHint = 'Target: $5k';
-    } else if (label.toLowerCase().includes('available')) {
-      displayHint = 'Live status';
-    } else if (label.toLowerCase().includes('active')) {
-      displayHint = 'Running now';
-    }
-  }
-
-  // Determine progress bar fill percentage matching design screenshots
-  let progressWidth = '60%';
-  if (label.toLowerCase().includes('collect')) progressWidth = '85%';
-  else if (label.toLowerCase().includes('outstand')) progressWidth = '0%';
-  else if (label.toLowerCase().includes('revenue') || label.toLowerCase().includes('spent')) progressWidth = '72%';
-  else if (label.toLowerCase().includes('available')) progressWidth = '45%';
-  else if (label.toLowerCase().includes('total') || label.toLowerCase().includes('playtime')) progressWidth = '65%';
 
   return (
     <div
       onClick={onClick}
-      className={`ccms-card-stat ccms-card-stat-hover ccms-stagger group ${onClick ? 'cursor-pointer' : ''}`}
+      className={`ccms-card-stat ccms-card-stat-hover ccms-stagger ${onClick ? 'cursor-pointer' : ''}`}
       style={{
-        animationDelay: `${index * 80}ms`,
-        borderTop: `1px solid ${accent}`,
+        animationDelay: `${index * 60}ms`,
+        padding: isMobile ? '12px 14px' : '18px 20px',
+        borderTop: `2px solid ${accent}`,
         position: 'relative',
         overflow: 'hidden',
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        gap: isMobile ? '8px' : '10px',
         cursor: onClick ? 'pointer' : undefined,
       }}
     >
-      {/* Background Decorative Icon */}
-      <div
-        className="absolute top-0 right-0 p-4 opacity-[0.06] group-hover:opacity-10 transition-opacity"
-        style={{ color: accent, pointerEvents: 'none' }}
-      >
-        <span
-          className="material-symbols-outlined leading-none"
-          style={{ fontSize: 'calc(54px * var(--icon-scale, 1))' }}
-        >
-          {iconName}
-        </span>
-      </div>
-
-      {/* Top Header Label */}
-      <div className="flex items-center gap-2 mb-3">
-        <span
-          className="material-symbols-outlined leading-none"
-          style={{ color: accent, fontSize: 'calc(16px * var(--icon-scale, 1))' }}
-        >
-          {iconName}
-        </span>
+      {/* Header: Icon + Label */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', minWidth: 0 }}>
         <span
           style={{
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: 'calc(12px * var(--font-scale, 1))',
+            fontSize: isMobile ? '11.5px' : '12.5px',
             fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
             color: 'var(--text-secondary)',
+            lineHeight: 1.3,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            minWidth: 0,
           }}
+          title={label}
         >
           {label}
         </span>
+        <span
+          style={{
+            width: isMobile ? '26px' : '30px',
+            height: isMobile ? '26px' : '30px',
+            borderRadius: '8px',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-default)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <span
+            className="material-symbols-outlined"
+            style={{ color: accent, fontSize: isMobile ? '15px' : '17px' }}
+          >
+            {iconName}
+          </span>
+        </span>
       </div>
 
-      {/* Numerical Value and Hint */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+      {/* Value & Optional Real Hint */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
         <div
           style={{
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: 'calc(30px * var(--font-scale, 1))',
+            fontFamily: 'JetBrains Mono, Plus Jakarta Sans, monospace',
+            fontVariantNumeric: 'tabular-nums',
+            fontSize: isMobile ? '20px' : '26px',
             fontWeight: 700,
-            lineHeight: 1.1,
+            lineHeight: 1.15,
             color: 'var(--text-primary)',
-            transition: 'font-size 0.15s ease',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
           }}
         >
           {value}
         </div>
-        {displayHint && (
-          <span 
-            style={{ 
-              fontSize: 'calc(12px * var(--font-scale, 1))', 
-              color: label.toLowerCase().includes('outstanding') ? 'var(--text-secondary)' : `${accent}b3`,
-              opacity: 0.8
+        {hint && (
+          <span
+            style={{
+              fontSize: isMobile ? '11px' : '12px',
+              color: 'var(--text-muted)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
-            {displayHint}
+            {hint}
           </span>
         )}
-      </div>
-
-      {/* Progress indicator bar at bottom */}
-      <div style={{ marginTop: '16px', height: '4px', width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '9999px', overflow: 'hidden' }}>
-        <div 
-          style={{ 
-            height: '100%', 
-            background: accent, 
-            width: progressWidth, 
-            borderRadius: '9999px',
-            boxShadow: progressWidth !== '0%' ? `0 0 8px ${accent}` : 'none',
-            transition: 'width 0.6s ease'
-          }} 
-        />
       </div>
     </div>
   );

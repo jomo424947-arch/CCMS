@@ -56,7 +56,7 @@ export default function EmployeesPage() {
         <>
           <Card style={{ overflow: 'hidden', marginBottom: '24px' }}>
             <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)' }}>
-              <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+              <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
                 {language === 'ar' ? 'سجل الموظفين النشطين' : 'Active Staff Registry'}
               </h2>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
@@ -97,7 +97,7 @@ export default function EmployeesPage() {
                         fontWeight: 700,
                         padding: '4px 8px',
                         borderRadius: '4px',
-                        background: emp.role === 'admin' ? 'rgba(0, 194, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                        background: emp.role === 'admin' ? 'rgba(223, 168, 66, 0.1)' : 'rgba(255, 255, 255, 0.05)',
                         color: emp.role === 'admin' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
                       }}
                     >

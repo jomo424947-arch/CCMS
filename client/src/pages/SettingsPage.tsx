@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { Card } from '../components/ui/Card';
 import { Table } from '../components/ui/Table';
@@ -23,6 +24,7 @@ import { SoftwareUpdateSection } from '../components/SoftwareUpdateSection';
 import type { Device, DeviceType } from '../types';
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { t, language } = useLanguage();
   const isMobile = useIsMobile();
@@ -36,21 +38,40 @@ export default function SettingsPage() {
   return (
     <Layout
       title={t('settings')}
-      subtitle={language === 'ar' ? 'لوحة التحكم الأمنية للمدير — إدارة الأجهزة، الأسعار، وإعدادات النظام.' : 'Admin control console — manage terminal nodes, rates, and fleet permissions'}
+      subtitle={language === 'ar' ? 'إدارة إعدادات الصالة، المظهر، طرق الدفع، والأجهزة.' : 'Manage lounge settings, appearance, payments, and devices.'}
       actions={
-        <Button
-          onClick={() => setCreating(true)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            width: isMobile ? '100%' : 'auto',
-            justifyContent: 'center',
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
-          {language === 'ar' ? 'إضافة جهاز جديد' : 'Add Device'}
-        </Button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
+          <button
+            type="button"
+            className="ccms-btn ccms-btn-ghost"
+            onClick={() => navigate('/super-admin')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              width: isMobile ? '100%' : 'auto',
+              justifyContent: 'center',
+              borderColor: 'rgba(223, 168, 66, 0.35)',
+              color: 'var(--accent-cyan)',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>admin_panel_settings</span>
+            {language === 'ar' ? 'إدارة الفروع والصالات' : 'Manage Lounges'}
+          </button>
+          <Button
+            onClick={() => setCreating(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              width: isMobile ? '100%' : 'auto',
+              justifyContent: 'center',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
+            {language === 'ar' ? 'إضافة جهاز جديد' : 'Add Device'}
+          </Button>
+        </div>
       }
     >
       <SoftwareUpdateSection />
@@ -73,18 +94,18 @@ export default function SettingsPage() {
         <>
           <Card style={{ overflow: 'hidden', marginBottom: '24px' }}>
             <div style={{ padding: isMobile ? '16px' : '20px 24px', borderBottom: '1px solid var(--border-default)' }}>
-              <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: isMobile ? '16px' : '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                {language === 'ar' ? 'سجل الأجهزة المفصل' : 'Node Registry'}
+              <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: isMobile ? '16px' : '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                {language === 'ar' ? 'قائمة الأجهزة' : 'Devices List'}
               </h2>
               <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
-                {allDevices.length} {language === 'ar' ? 'أجهزة مسجلة في أسطول الصالة النشط' : `node${allDevices.length === 1 ? '' : 's'} registered in the active fleet`}
+                {allDevices.length} {language === 'ar' ? 'أجهزة مسجلة في الصالة' : `device${allDevices.length === 1 ? '' : 's'} registered`}
               </p>
             </div>
             <Table
               columns={[
                 {
                   key: 'name',
-                  header: language === 'ar' ? 'معرّف الجهاز' : 'Node Identifier',
+                  header: language === 'ar' ? 'اسم الجهاز' : 'Device Name',
                   render: (d: Device) => (
                     <strong style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--accent-cyan)' }}>
@@ -99,7 +120,7 @@ export default function SettingsPage() {
                   header: language === 'ar' ? 'النوع' : 'Category',
                   render: (d: Device) => {
                     if (language === 'ar') {
-                      if (d.type === 'pc') return 'كمبيوتر مكتبى';
+                      if (d.type === 'pc') return 'كمبيوتر';
                       if (d.type === 'console') return 'جهاز كونسول';
                       if (d.type === 'table') return 'طربيزة';
                       return 'شاشة ذكية';
@@ -109,12 +130,12 @@ export default function SettingsPage() {
                 },
                 {
                   key: 'status',
-                  header: language === 'ar' ? 'حالة الاتصال' : 'Encryption Link',
+                  header: language === 'ar' ? 'الحالة' : 'Status',
                   render: (d: Device) => <StatusBadge status={d.status} />,
                 },
                 {
                   key: 'rate',
-                  header: language === 'ar' ? 'سعر الساعة الأساسي' : 'Base Rate ($/hr)',
+                  header: language === 'ar' ? 'سعر الساعة' : 'Hourly Rate',
                   align: 'right',
                   render: (d: Device) => (
                     <span style={{ fontFamily: 'JetBrains Mono, monospace' }}>
@@ -156,7 +177,7 @@ export default function SettingsPage() {
       {/* Edit modal */}
       {editing && (
         <DeviceFormModal
-          title={language === 'ar' ? `تعديل الجهاز · ${editing.name}` : `Edit Node · ${editing.name}`}
+          title={language === 'ar' ? `تعديل الجهاز · ${editing.name}` : `Edit Device · ${editing.name}`}
           initial={editing}
           onClose={() => setEditing(null)}
           onDone={async (patch) => {
@@ -175,7 +196,7 @@ export default function SettingsPage() {
       {/* Create modal */}
       {creating && (
         <DeviceFormModal
-          title={language === 'ar' ? 'تسجيل جهاز جديد' : 'Register Node'}
+          title={language === 'ar' ? 'إضافة جهاز جديد' : 'Add Device'}
           initial={null}
           onClose={() => setCreating(false)}
           onDone={async (patch) => {
@@ -195,7 +216,7 @@ export default function SettingsPage() {
       {deleting && (
         <Modal
           open
-          title={language === 'ar' ? 'إزالة الجهاز' : 'Remove Node'}
+          title={language === 'ar' ? 'حذف الجهاز' : 'Delete Device'}
           onClose={() => setDeleting(null)}
           footer={
             <>
@@ -267,11 +288,11 @@ function SystemBrandingSection() {
           badge
         </span>
         <div>
-          <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: isMobile ? '16px' : '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-            {isAr ? 'إعدادات هوية النظام وصورة المحل' : 'System Identity & Cyber Logo'}
+          <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: isMobile ? '16px' : '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+            {isAr ? 'هوية الصالة والشعار' : 'Lounge Identity & Logo'}
           </h2>
           <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0, lineHeight: 1.5 }}>
-            {isAr ? 'تحديد اسم المحل/السايبر وشعار الواجهة الرسمي ليظهر في كافة شاشات ولوحات التحكم.' : 'Customize your cafe name and brand logo across all system terminals.'}
+            {isAr ? 'تخصيص اسم الصالة وشعارها ليظهر في كافة شاشات النظام والفواتير.' : 'Customize your lounge name and logo across the app and invoices.'}
           </p>
         </div>
       </div>
@@ -360,12 +381,12 @@ function SystemBrandingSection() {
               height: '80px',
               borderRadius: '16px',
               background: 'var(--bg-surface)',
-              border: '1px solid rgba(0, 194, 255, 0.3)',
+              border: '1px solid rgba(223, 168, 66, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               overflow: 'hidden',
-              boxShadow: '0 0 16px rgba(0, 194, 255, 0.15)',
+              boxShadow: '0 0 16px rgba(223, 168, 66, 0.15)',
             }}
           >
             {logoUrl ? (
@@ -376,7 +397,7 @@ function SystemBrandingSection() {
               </span>
             )}
           </div>
-          <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 700, color: 'var(--accent-cyan)', wordBreak: 'break-word', maxWidth: '100%' }}>
+          <div style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '18px', fontWeight: 700, color: 'var(--accent-cyan)', wordBreak: 'break-word', maxWidth: '100%' }}>
             {name || 'CCMS'}
           </div>
         </div>
@@ -440,7 +461,7 @@ function PaymentSettingsSection() {
           qr_code_2
         </span>
         <div>
-          <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: isMobile ? '16px' : '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+          <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: isMobile ? '16px' : '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
             {isAr ? 'إعدادات المحفظة الإلكترونية وطرق الدفع' : 'E-Wallet & Digital Payment Settings'}
           </h2>
           <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0, lineHeight: 1.5 }}>
@@ -635,94 +656,87 @@ function PaymentSettingsSection() {
 }
 
 function ThemeSettingsSection() {
-  const { theme, setTheme, fontScale, iconScale, setFontScale, setIconScale, resetVisualScale } = useTheme();
+  const { theme, setTheme, fontScale, setFontScale, resetVisualScale } = useTheme();
   const { language, t } = useLanguage();
   const isMobile = useIsMobile();
   const isAr = language === 'ar';
 
   const fontPresets = [
-    { label: isAr ? 'صغير' : 'Compact', value: 85 },
-    { label: isAr ? 'افتراضي' : 'Default', value: 100 },
-    { label: isAr ? 'كبير' : 'Large', value: 115 },
-    { label: isAr ? 'كبير جداً' : 'X-Large', value: 130 },
-  ];
-
-  const iconPresets = [
-    { label: isAr ? 'مصغر' : 'Small', value: 85 },
-    { label: isAr ? 'افتراضي' : 'Default', value: 100 },
-    { label: isAr ? 'مكبر' : 'Large', value: 115 },
-    { label: isAr ? 'بارز' : 'X-Large', value: 130 },
+    { label: isAr ? 'صغير' : 'Small', desc: '94%', value: 94 },
+    { label: isAr ? 'عادي' : 'Normal', desc: '100%', value: 100 },
+    { label: isAr ? 'كبير' : 'Large', desc: '108%', value: 108 },
   ];
 
   return (
-    <Card style={{ padding: isMobile ? '16px' : '24px', marginBottom: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '1px solid var(--border-default)', paddingBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: '22px', color: 'var(--accent-cyan)' }}>
+    <Card style={{ padding: isMobile ? '16px' : '24px', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', borderBottom: '1px solid var(--border-default)', paddingBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '20px', color: 'var(--accent-cyan)' }}>
             palette
           </span>
           <div>
-            <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: isMobile ? '16px' : '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+            <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: isMobile ? '15.5px' : '17px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
               {t('visual_scaling_title')}
             </h2>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '3px', margin: 0 }}>
               {t('visual_scaling_desc')}
             </p>
           </div>
         </div>
-        {(fontScale !== 100 || iconScale !== 100) && (
+        {fontScale !== 100 && (
           <button
+            type="button"
             onClick={resetVisualScale}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '6px',
-              padding: '6px 14px',
+              padding: '6px 12px',
               borderRadius: '8px',
               fontSize: '12px',
               fontWeight: 600,
-              background: 'rgba(239, 68, 68, 0.12)',
+              background: 'rgba(239, 68, 68, 0.1)',
               color: 'var(--accent-red)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
+              border: '1px solid rgba(239, 68, 68, 0.28)',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
               width: isMobile ? '100%' : 'auto',
-              minHeight: '36px',
+              minHeight: '34px',
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>restart_alt</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>restart_alt</span>
             {t('reset_scaling')}
           </button>
         )}
       </div>
 
       {/* Dark / Light Theme Mode Selectors */}
-      <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
-        {isAr ? 'نمط الواجهة (أسود / أبيض)' : 'Visual Mode (Dark / Light)'}
+      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '10px' }}>
+        {isAr ? 'نمط الألوان' : 'Color Theme'}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px', marginBottom: isMobile ? '24px' : '32px' }}>
-        <div
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: '10px', marginBottom: '20px' }}>
+        <button
+          type="button"
           onClick={() => setTheme('dark')}
           style={{
-            padding: '16px 20px',
-            borderRadius: '12px',
+            padding: '14px 16px',
+            borderRadius: '11px',
             background: 'var(--bg-base)',
-            border: theme === 'dark' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-default)',
-            boxShadow: theme === 'dark' ? 'var(--shadow-glow)' : 'none',
+            border: theme === 'dark' ? '1.5px solid var(--accent-cyan)' : '1px solid var(--border-default)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '16px',
-            transition: 'all 0.2s ease',
+            gap: '12px',
+            textAlign: 'inherit',
+            transition: 'border-color 0.2s ease',
           }}
         >
           <div
             style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              background: 'rgba(0, 194, 255, 0.1)',
+              width: '36px',
+              height: '36px',
+              borderRadius: '9px',
+              background: 'rgba(223, 168, 66, 0.12)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -730,38 +744,39 @@ function ThemeSettingsSection() {
               flexShrink: 0,
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>dark_mode</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>dark_mode</span>
           </div>
-          <div>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {isAr ? 'الوضع الداكن (أسود)' : 'Dark Mode'}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              {isAr ? 'الوضع الداكن' : 'Dark Mode'}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              {isAr ? 'النمط السايبر الداكن المميز' : 'Default Cyberpunk Aesthetic'}
+              {isAr ? 'مريح للعين في الإضاءة المنخفضة' : 'Comfortable dark theme'}
             </div>
           </div>
-        </div>
+        </button>
 
-        <div
+        <button
+          type="button"
           onClick={() => setTheme('light')}
           style={{
-            padding: '16px 20px',
-            borderRadius: '12px',
+            padding: '14px 16px',
+            borderRadius: '11px',
             background: 'var(--bg-base)',
-            border: theme === 'light' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-default)',
-            boxShadow: theme === 'light' ? 'var(--shadow-glow)' : 'none',
+            border: theme === 'light' ? '1.5px solid var(--accent-cyan)' : '1px solid var(--border-default)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '16px',
-            transition: 'all 0.2s ease',
+            gap: '12px',
+            textAlign: 'inherit',
+            transition: 'border-color 0.2s ease',
           }}
         >
           <div
             style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
+              width: '36px',
+              height: '36px',
+              borderRadius: '9px',
               background: 'var(--accent-cyan-dim)',
               display: 'flex',
               alignItems: 'center',
@@ -770,216 +785,63 @@ function ThemeSettingsSection() {
               flexShrink: 0,
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>light_mode</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>light_mode</span>
           </div>
-          <div>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {isAr ? 'الوضع الفاتح (أبيض)' : 'Light Mode'}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              {isAr ? 'الوضع الفاتح' : 'Light Mode'}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              {isAr ? 'نمط النهار الفاتح والنقي' : 'Clean & Crisp Daytime Mode'}
+              {isAr ? 'واضح ومشرق للعمل النهاري' : 'Clean daytime appearance'}
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
-      {/* Visual Precision Controls Section */}
-      <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: '20px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: isMobile ? '16px' : '28px' }}>
-
-          {/* Font Scale Precision Control */}
-          <div style={{ background: 'var(--bg-base)', padding: isMobile ? '16px' : '20px', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '20px', color: 'var(--accent-cyan)' }}>format_size</span>
-                <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>{t('font_scale')}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <input
-                  type="number"
-                  min={70}
-                  max={160}
-                  value={fontScale}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    if (!isNaN(val)) setFontScale(val);
-                  }}
-                  style={{
-                    width: '60px',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-glow)',
-                    color: 'var(--text-primary)',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    textAlign: 'center',
-                  }}
-                />
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>%</span>
-              </div>
-            </div>
-
-            {/* Slider */}
-            <input
-              type="range"
-              min={75}
-              max={150}
-              step={1}
-              value={fontScale}
-              onChange={(e) => setFontScale(Number(e.target.value))}
-              style={{
-                width: '100%',
-                accentColor: 'var(--accent-cyan)',
-                cursor: 'pointer',
-                marginBottom: '14px',
-              }}
-            />
-
-            {/* Presets */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-              {fontPresets.map((preset) => (
-                <button
-                  key={preset.value}
-                  onClick={() => setFontScale(preset.value)}
-                  style={{
-                    padding: '6px 4px',
-                    borderRadius: '6px',
-                    fontSize: '11px',
-                    fontWeight: fontScale === preset.value ? 700 : 500,
-                    background: fontScale === preset.value ? 'var(--accent-cyan)' : 'var(--bg-surface)',
-                    color: fontScale === preset.value ? '#000' : 'var(--text-secondary)',
-                    border: fontScale === preset.value ? 'none' : '1px solid var(--border-default)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    textAlign: 'center',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
+      {/* Text Size Selector (Safe Ergonomic Presets Only) */}
+      <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-cyan)' }}>format_size</span>
+            <span style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--text-primary)' }}>{t('font_scale')}</span>
           </div>
-
-          {/* Icon Scale Precision Control */}
-          <div style={{ background: 'var(--bg-base)', padding: isMobile ? '16px' : '20px', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '20px', color: 'var(--accent-cyan)' }}>grid_view</span>
-                <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>{t('icon_scale')}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <input
-                  type="number"
-                  min={70}
-                  max={160}
-                  value={iconScale}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    if (!isNaN(val)) setIconScale(val);
-                  }}
-                  style={{
-                    width: '60px',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-glow)',
-                    color: 'var(--text-primary)',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    textAlign: 'center',
-                  }}
-                />
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>%</span>
-              </div>
-            </div>
-
-            {/* Slider */}
-            <input
-              type="range"
-              min={75}
-              max={150}
-              step={1}
-              value={iconScale}
-              onChange={(e) => setIconScale(Number(e.target.value))}
-              style={{
-                width: '100%',
-                accentColor: 'var(--accent-cyan)',
-                cursor: 'pointer',
-                marginBottom: '14px',
-              }}
-            />
-
-            {/* Presets */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-              {iconPresets.map((preset) => (
-                <button
-                  key={preset.value}
-                  onClick={() => setIconScale(preset.value)}
-                  style={{
-                    padding: '6px 4px',
-                    borderRadius: '6px',
-                    fontSize: '11px',
-                    fontWeight: iconScale === preset.value ? 700 : 500,
-                    background: iconScale === preset.value ? 'var(--accent-cyan)' : 'var(--bg-surface)',
-                    color: iconScale === preset.value ? '#000' : 'var(--text-secondary)',
-                    border: iconScale === preset.value ? 'none' : '1px solid var(--border-default)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    textAlign: 'center',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>
+            {fontScale}%
+          </span>
         </div>
 
-        {/* Live Interactive Preview Box */}
-        <div style={{ marginTop: '20px', background: 'var(--bg-surface)', borderRadius: '12px', padding: isMobile ? '14px' : '20px', border: '1px dashed var(--border-glow)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>preview</span>
-              {t('live_preview')}
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>
-              {isAr ? `الخط: ${fontScale}% | الأيقونات: ${iconScale}%` : `Font: ${fontScale}% | Icons: ${iconScale}%`}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '16px', flexWrap: 'wrap', background: 'var(--bg-base)', padding: isMobile ? '12px' : '16px', borderRadius: '10px', transition: 'all 0.15s ease' }}>
-            <span className="material-symbols-outlined" style={{ color: 'var(--accent-cyan)', fontSize: `${24 * (iconScale / 100)}px`, flexShrink: 0 }}>
-              sports_esports
-            </span>
-            <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-              <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: `${14 * (fontScale / 100)}px`, wordBreak: 'break-word' }}>
-                {isAr ? 'جهاز VIP-01 (PlayStation 5)' : 'Device VIP-01 (PlayStation 5)'}
-              </div>
-              <div style={{ color: 'var(--text-secondary)', marginTop: '2px', fontSize: `${12 * (fontScale / 100)}px` }}>
-                {isAr ? 'الجلسة نشطة — الوقت المتبقي: 01:45:00' : 'Session Active — Time Remaining: 01:45:00'}
-              </div>
-            </div>
-            <div style={{ marginLeft: isAr ? 'none' : 'auto', marginRight: isAr ? 'auto' : 'none', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              <span style={{ padding: '4px 8px', borderRadius: '20px', background: 'rgba(34, 197, 94, 0.15)', color: 'var(--accent-green)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: `${11 * (fontScale / 100)}px` }}>
-                <span className="material-symbols-outlined" style={{ fontSize: `${14 * (iconScale / 100)}px` }}>check_circle</span>
-                {isAr ? 'متاح' : 'Available'}
-              </span>
-              <span style={{ padding: '4px 8px', borderRadius: '20px', background: 'rgba(0, 194, 255, 0.15)', color: 'var(--accent-cyan)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: `${11 * (fontScale / 100)}px` }}>
-                <span className="material-symbols-outlined" style={{ fontSize: `${14 * (iconScale / 100)}px` }}>tune</span>
-                {isAr ? 'إجبار الحجم' : 'Scaled'}
-              </span>
-            </div>
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' }}>
+          {fontPresets.map((preset) => {
+            const active = fontScale === preset.value;
+            return (
+              <button
+                key={preset.value}
+                type="button"
+                onClick={() => setFontScale(preset.value)}
+                style={{
+                  padding: '10px 8px',
+                  borderRadius: '9px',
+                  fontSize: '13px',
+                  fontWeight: active ? 700 : 500,
+                  background: active ? 'var(--accent-cyan)' : 'var(--bg-base)',
+                  color: active ? '#111114' : 'var(--text-secondary)',
+                  border: active ? '1px solid var(--accent-cyan)' : '1px solid var(--border-default)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                }}
+              >
+                <span>{preset.label}</span>
+                <span style={{ fontSize: '11px', opacity: active ? 0.85 : 0.65, fontFamily: 'JetBrains Mono, monospace' }}>
+                  {preset.desc}
+                </span>
+              </button>
+            );
+          })}
         </div>
-
       </div>
     </Card>
   );

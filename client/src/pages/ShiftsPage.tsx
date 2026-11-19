@@ -296,14 +296,14 @@ export default function ShiftsPage() {
       {activeShift ? (
         <div
           style={{
-            background: 'linear-gradient(135deg, rgba(0, 194, 255, 0.08) 0%, rgba(16, 185, 129, 0.06) 100%)',
-            border: '1px solid rgba(0, 194, 255, 0.3)',
+            background: 'linear-gradient(135deg, rgba(223, 168, 66, 0.08) 0%, rgba(16, 185, 129, 0.06) 100%)',
+            border: '1px solid rgba(223, 168, 66, 0.3)',
             borderRadius: '16px',
             padding: '24px',
             marginBottom: '28px',
             position: 'relative',
             overflow: 'hidden',
-            boxShadow: '0 8px 32px rgba(0, 194, 255, 0.08)',
+            boxShadow: '0 8px 32px rgba(223, 168, 66, 0.08)',
           }}
         >
           <div
@@ -313,7 +313,7 @@ export default function ShiftsPage() {
               right: 0,
               width: '180px',
               height: '180px',
-              background: 'radial-gradient(circle, rgba(0, 194, 255, 0.15) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(223, 168, 66, 0.15) 0%, transparent 70%)',
               pointerEvents: 'none',
             }}
           />
@@ -326,8 +326,8 @@ export default function ShiftsPage() {
                   width: '56px',
                   height: '56px',
                   borderRadius: '14px',
-                  background: 'rgba(0, 194, 255, 0.12)',
-                  border: '1px solid rgba(0, 194, 255, 0.4)',
+                  background: 'rgba(223, 168, 66, 0.12)',
+                  border: '1px solid rgba(223, 168, 66, 0.4)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -463,9 +463,9 @@ export default function ShiftsPage() {
             <div
               style={{
                 padding: '12px 16px',
-                background: 'linear-gradient(135deg, rgba(0, 194, 255, 0.15) 0%, rgba(0, 194, 255, 0.05) 100%)',
+                background: 'linear-gradient(135deg, rgba(223, 168, 66, 0.15) 0%, rgba(223, 168, 66, 0.05) 100%)',
                 borderRadius: '10px',
-                border: '1px solid rgba(0, 194, 255, 0.4)',
+                border: '1px solid rgba(223, 168, 66, 0.4)',
               }}
             >
               <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -702,8 +702,8 @@ export default function ShiftsPage() {
                         width: '32px',
                         height: '32px',
                         borderRadius: '8px',
-                        background: 'rgba(0, 194, 255, 0.1)',
-                        border: '1px solid rgba(0, 194, 255, 0.25)',
+                        background: 'rgba(223, 168, 66, 0.1)',
+                        border: '1px solid rgba(223, 168, 66, 0.25)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -810,8 +810,8 @@ export default function ShiftsPage() {
                       title={language === 'ar' ? 'عرض ملخص الوردية' : 'View Shift Summary'}
                       onClick={() => handleViewSummary(s.id)}
                       style={{
-                        background: 'rgba(0, 194, 255, 0.1)',
-                        border: '1px solid rgba(0, 194, 255, 0.2)',
+                        background: 'rgba(223, 168, 66, 0.1)',
+                        border: '1px solid rgba(223, 168, 66, 0.2)',
                         color: 'var(--accent-cyan)',
                         padding: '6px 10px',
                         borderRadius: '6px',
@@ -1003,7 +1003,7 @@ export default function ShiftsPage() {
             </div>
           </div>
 
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(0, 194, 255, 0.06)', border: '1px solid rgba(0, 194, 255, 0.2)', padding: '10px 14px', borderRadius: '8px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(223, 168, 66, 0.06)', border: '1px solid rgba(223, 168, 66, 0.2)', padding: '10px 14px', borderRadius: '8px' }}>
             <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-cyan)' }}>
               info
             </span>
@@ -1267,7 +1267,7 @@ export default function ShiftsPage() {
                   -{formatCurrency(summaryData.total_expenses)}
                 </div>
               </div>
-              <div style={{ padding: '10px 14px', background: 'rgba(0, 194, 255, 0.1)', borderRadius: '10px', border: '1px solid rgba(0, 194, 255, 0.3)' }}>
+              <div style={{ padding: '10px 14px', background: 'rgba(223, 168, 66, 0.1)', borderRadius: '10px', border: '1px solid rgba(223, 168, 66, 0.3)' }}>
                 <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: 600 }}>{language === 'ar' ? 'المتوقع بالدرج' : 'Expected Total'}</span>
                 <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff', fontFamily: 'JetBrains Mono, monospace' }}>
                   {formatCurrency(summaryData.expected_closing)}

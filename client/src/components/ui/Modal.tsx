@@ -52,7 +52,7 @@ export function Modal({ open, title, onClose, children, footer, width = 480, bod
           maxWidth: isMobile ? '100%' : typeof width === 'number' ? `${width}px` : width,
           background: 'var(--bg-elevated)',
           border: '1px solid var(--border-default)',
-          borderTop: '1px solid rgba(0, 194, 255, 0.3)', // Redesign specification inner glow
+          borderTop: '1px solid rgba(223, 168, 66, 0.3)', // Redesign specification inner glow
           borderBottom: isMobile ? 'none' : '1px solid var(--border-default)',
           borderTopLeftRadius: '12px',
           borderTopRightRadius: '12px',
@@ -78,7 +78,7 @@ export function Modal({ open, title, onClose, children, footer, width = 480, bod
         >
           <h2
             style={{
-              fontFamily: 'Space Grotesk, sans-serif',
+              fontFamily: 'Plus Jakarta Sans, sans-serif',
               fontSize: '18px',
               fontWeight: 600,
               color: 'var(--text-primary)',

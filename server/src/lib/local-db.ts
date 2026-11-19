@@ -158,6 +158,10 @@ class QueryBuilder {
     if (opts?.count) this._countMode = opts.count;
     if (opts?.head) this._headMode = true;
 
+    if (this._isMutating()) {
+      return this._enableReturning(cols);
+    }
+
     const { baseCols, joins, nestedJoins } = this._parseSelect(cols);
     this._selectCols = baseCols;
     this._joins = joins;

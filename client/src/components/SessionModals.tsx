@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -17,7 +18,7 @@ const toLocalISOString = toDateTimeLocalValue;
 export { TransferSessionModal } from './TransferSessionModal';
 export function StartSessionModal({
   device,
-  playMode = 'single',
+  playMode: initialPlayMode = 'single',
   onClose,
   onDone,
 }: {
@@ -27,6 +28,7 @@ export function StartSessionModal({
   onDone: () => void;
 }) {
   const { t, language, isRtl } = useLanguage();
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[] | null>(null);
   const [mode, setMode] = useState<'existing' | 'new'>('new');
   
@@ -38,6 +40,7 @@ export function StartSessionModal({
   const [name, setName] = useState('');
 
   // Session options
+  const [playMode, setPlayMode] = useState<'single' | 'multiplayer'>(initialPlayMode);
   const [sessionType, setSessionType] = useState<'open' | 'fixed'>('open');
   const [startedAt, setStartedAt] = useState(toDateTimeLocalValue(new Date()));
   const [hasCustomStart, setHasCustomStart] = useState(false);
@@ -45,6 +48,8 @@ export function StartSessionModal({
   const [gracePeriod, setGracePeriod] = useState('0');
   
   const [loading, setLoading] = useState(false);
+  const [startingShift, setStartingShift] = useState(false);
+  const [openingCash, setOpeningCash] = useState('0');
   const [errorMsg, setErrorMsg] = useState('');
   const [hasActiveShift, setHasActiveShift] = useState<boolean | null>(null);
 
@@ -63,13 +68,28 @@ export function StartSessionModal({
     );
   }, [customers, searchQuery]);
 
-  const computedScheduledEnd = useMemo(() => {
-    if (sessionType !== 'fixed') return '';
+  const previewScheduledEnd = useMemo(() => {
+    if (sessionType !== 'fixed') return null;
     const startDate = hasCustomStart ? fromDateTimeLocalValue(startedAt) : new Date();
     const mins = parseInt(durationMinutes, 10) || 0;
-    const endDate = new Date(startDate.getTime() + mins * 60000);
-    return toDateTimeLocalValue(endDate);
+    if (mins <= 0) return null;
+    return new Date(startDate.getTime() + mins * 60000);
   }, [sessionType, startedAt, durationMinutes, hasCustomStart]);
+
+  const handleQuickStartShift = async () => {
+    setStartingShift(true);
+    setErrorMsg('');
+    try {
+      const cashVal = Math.max(0, parseFloat(openingCash || '0') || 0);
+      await dataService.startShift({ opening_cash: cashVal });
+      window.dispatchEvent(new Event('shift-changed'));
+      setHasActiveShift(true);
+    } catch (err: any) {
+      setErrorMsg(apiErrorMessage(err, language === 'ar' ? 'تعذر بدء الوردية' : 'Failed to start shift'));
+    } finally {
+      setStartingShift(false);
+    }
+  };
 
   const submit = async () => {
     setLoading(true);
@@ -79,27 +99,34 @@ export function StartSessionModal({
         device_id: device.id,
         session_type: sessionType,
         play_mode: playMode,
-        grace_period_minutes: sessionType === 'fixed' ? (parseInt(gracePeriod, 10) || 0) : 0,
+        grace_period_minutes: sessionType === 'fixed' ? Math.max(0, parseInt(gracePeriod, 10) || 0) : 0,
       };
 
       if (mode === 'existing') {
         if (!customerId) throw new Error(language === 'ar' ? 'يرجى اختيار عميل مسجل' : 'Please select a customer');
         payload.customer_id = customerId;
-      } else {
-        payload.customer_name = name.trim() || undefined;
+      } else if (name.trim()) {
+        payload.customer_name = name.trim();
       }
 
       const now = new Date();
+      let effectiveStart = now;
       if (hasCustomStart) {
         const start = fromDateTimeLocalValue(startedAt);
         if (start.getTime() > now.getTime() + 10000) {
           throw new Error(language === 'ar' ? 'وقت البدء لا يمكن أن يكون في المستقبل' : 'Start time cannot be in the future');
         }
         payload.started_at = start.toISOString();
+        effectiveStart = start;
       }
 
       if (sessionType === 'fixed') {
-        payload.scheduled_end = fromDateTimeLocalValue(computedScheduledEnd).toISOString();
+        const mins = parseInt(durationMinutes, 10);
+        if (!mins || mins <= 0) {
+          throw new Error(language === 'ar' ? 'يرجى إدخال مدة صحيحة بالدقائق (أكبر من 0)' : 'Please enter a valid duration in minutes');
+        }
+        // Always calculate scheduled_end fresh from effectiveStart at submit time so it never goes stale
+        payload.scheduled_end = new Date(effectiveStart.getTime() + mins * 60000).toISOString();
       }
 
       await dataService.startSession(payload);
@@ -107,7 +134,7 @@ export function StartSessionModal({
     } catch (err: any) {
       const msg = apiErrorMessage(err, language === 'ar' ? 'فشل بدء الجلسة' : 'Could not start session');
       setErrorMsg(msg);
-      if (err?.response?.data?.error?.code === 'NO_ACTIVE_SHIFT' || msg.includes('وردية') || msg.includes('shift')) {
+      if (err?.response?.data?.error?.code === 'NO_ACTIVE_SHIFT' || msg.includes('وردية') || msg.toLowerCase().includes('shift')) {
         setHasActiveShift(false);
       }
     } finally {
@@ -127,34 +154,61 @@ export function StartSessionModal({
               {t('cancel')}
             </Button>
             <Button
-              variant="primary"
+              variant="ghost"
               onClick={() => {
                 onClose();
-                window.location.href = '/shifts';
+                navigate('/shifts');
               }}
               style={{ fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}
             >
-              {language === 'ar' ? 'الانتقال لصفحة الورديات لبدء الوردية' : 'Go to Shifts to Start'}
+              {language === 'ar' ? 'صفحة الورديات' : 'Open Shifts Page'}
+            </Button>
+            <Button
+              variant="primary"
+              loading={startingShift}
+              onClick={handleQuickStartShift}
+              style={{ fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>play_arrow</span>
+              <span>{language === 'ar' ? 'فتح وردية الآن والمتابعة' : 'Start Shift Now & Continue'}</span>
             </Button>
           </>
         }
       >
-        <div style={{ textAlign: 'center', padding: '16px 8px' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--accent-yellow)', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '8px 4px', textAlign: 'center' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '44px', color: 'var(--accent-yellow)', margin: '0 auto' }}>
             schedule
           </span>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)', fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}>
-            {language === 'ar' ? 'يجب بدء الوردية أولاً' : 'Shift Required'}
+          <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-primary)', fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}>
+            {language === 'ar' ? 'يجب فتح وردية قبل بدء الجلسة' : 'An Active Shift is Required'}
           </h3>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}>
             {language === 'ar'
-              ? 'حسب قواعد النظام المحاسبي، لا يمكن بدء أي جلسات أو إصدار فواتير دون وجود وردية عمل مفتوحة للموظف لتسجيل العهدة والإيرادات.'
-              : 'Per accounting rules, starting gaming sessions or generating invoices requires an active staff shift.'}
+              ? 'يمكنك فتح الوردية فوراً من هنا لتسجيل الإيرادات والفواتير ثم متابعة بدء الجلسة مباشرة.'
+              : 'Open a staff shift right here to track session revenue and invoices, then immediately start this session.'}
           </p>
+          <div style={{ textAlign: isRtl ? 'right' : 'left' }}>
+            <Input
+              type="number"
+              min="0"
+              label={language === 'ar' ? 'عهدة الدرج الافتتاحية (اختياري)' : 'Opening Drawer Cash (optional)'}
+              value={openingCash}
+              onChange={(e) => setOpeningCash(e.target.value)}
+            />
+          </div>
+          {errorMsg && (
+            <div style={{ color: 'var(--accent-red)', fontSize: '12px', padding: '8px 10px', background: 'rgba(255, 68, 102, 0.1)', borderRadius: '8px' }}>
+              {errorMsg}
+            </div>
+          )}
         </div>
       </Modal>
     );
   }
+
+  const effectiveRate = playMode === 'multiplayer'
+    ? Number(device.hourly_rate_multi || device.hourly_rate || 0)
+    : Number(device.hourly_rate || 0);
 
   return (
     <Modal
@@ -238,6 +292,38 @@ export function StartSessionModal({
 
         <hr style={{ border: '0', borderTop: '1px solid var(--border-default)', margin: '4px 0' }} />
 
+        {/* Play Mode Toggle (Single vs Multiplayer) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="ccms-eyebrow" style={{ fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}>
+              {language === 'ar' ? 'نظام اللعب والتسعير' : 'Play Mode & Rate'}
+            </span>
+            <span style={{ fontSize: '12px', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: 'var(--accent-cyan)' }}>
+              {formatCurrency(effectiveRate)}/{language === 'ar' ? 'ساعة' : 'hr'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              type="button"
+              className={playMode === 'single' ? 'ccms-btn ccms-btn-primary' : 'ccms-btn ccms-btn-ghost'}
+              style={{ flex: 1, fontSize: '12px', fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}
+              onClick={() => setPlayMode('single')}
+            >
+              {language === 'ar' ? `فردي (${formatCurrency(device.hourly_rate)})` : `Single (${formatCurrency(device.hourly_rate)})`}
+            </button>
+            <button
+              type="button"
+              className={playMode === 'multiplayer' ? 'ccms-btn ccms-btn-primary' : 'ccms-btn ccms-btn-ghost'}
+              style={{ flex: 1, fontSize: '12px', fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}
+              onClick={() => setPlayMode('multiplayer')}
+            >
+              {language === 'ar'
+                ? `جماعي (${formatCurrency(device.hourly_rate_multi || device.hourly_rate)})`
+                : `Multi (${formatCurrency(device.hourly_rate_multi || device.hourly_rate)})`}
+            </button>
+          </div>
+        </div>
+
         {/* Toggle Session Type */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <span className="ccms-eyebrow" style={{ fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit' }}>
@@ -274,6 +360,21 @@ export function StartSessionModal({
 
         {sessionType === 'fixed' && (
           <>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {[30, 60, 90, 120, 180].map((mins) => (
+                <button
+                  key={mins}
+                  type="button"
+                  onClick={() => setDurationMinutes(String(mins))}
+                  className={durationMinutes === String(mins) ? 'ccms-btn ccms-btn-primary' : 'ccms-btn ccms-btn-ghost'}
+                  style={{ padding: '4px 10px', fontSize: '11.5px', minHeight: '30px' }}
+                >
+                  {mins >= 60 && mins % 60 === 0
+                    ? `${mins / 60} ${language === 'ar' ? 'ساعة' : 'hr'}`
+                    : `${mins} ${language === 'ar' ? 'د' : 'm'}`}
+                </button>
+              ))}
+            </div>
             <div className="ccms-grid-form" style={{ gap: '12px' }}>
               <Input
                 type="number"
@@ -290,9 +391,9 @@ export function StartSessionModal({
                 onChange={(e) => setGracePeriod(e.target.value)}
               />
             </div>
-            {durationMinutes && startedAt && (
+            {previewScheduledEnd && (
               <div style={{ fontSize: '12px', color: 'var(--accent-cyan)' }}>
-                {language === 'ar' ? 'نهاية الجلسة المجدولة:' : 'Scheduled End:'} <strong>{fromDateTimeLocalValue(computedScheduledEnd).toLocaleString(language === 'ar' ? 'ar-EG' : undefined)}</strong>
+                {language === 'ar' ? 'نهاية الجلسة المجدولة:' : 'Scheduled End:'} <strong>{previewScheduledEnd.toLocaleString(language === 'ar' ? 'ar-EG' : undefined)}</strong>
               </div>
             )}
           </>
@@ -301,12 +402,12 @@ export function StartSessionModal({
         {errorMsg && (
           <div style={{ color: 'var(--accent-red)', fontSize: '13px', padding: '10px 12px', background: 'rgba(255, 68, 102, 0.1)', borderRadius: '8px', border: '1px solid rgba(255, 68, 102, 0.3)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div>{errorMsg}</div>
-            {(errorMsg.includes('وردية') || errorMsg.includes('shift') || errorMsg.includes('400')) && (
+            {(errorMsg.includes('وردية') || errorMsg.toLowerCase().includes('shift')) && (
               <Button
                 variant="primary"
                 onClick={() => {
                   onClose();
-                  window.location.href = '/shifts';
+                  navigate('/shifts');
                 }}
                 style={{ alignSelf: 'flex-start', fontSize: '12px', padding: '4px 12px', marginTop: '4px' }}
               >
@@ -466,7 +567,7 @@ export function EndSessionModal({
 
       onDone();
     } catch (err: any) {
-      setErrorMsg(err.message || apiErrorMessage(err, 'Could not end session'));
+      setErrorMsg(apiErrorMessage(err, err?.message || (language === 'ar' ? 'تعذر إنهاء الجلسة' : 'Could not end session')));
     } finally {
       setLoading(false);
     }
@@ -499,9 +600,9 @@ export function EndSessionModal({
                   fontWeight: 600,
                   padding: '2px 10px',
                   borderRadius: '12px',
-                  background: 'rgba(0, 194, 255, 0.15)',
+                  background: 'rgba(223, 168, 66, 0.15)',
                   color: 'var(--accent-cyan)',
-                  border: '1px solid rgba(0, 194, 255, 0.3)',
+                  border: '1px solid rgba(223, 168, 66, 0.3)',
                 }}>
                   {session.device?.name ?? 'الجهاز'}
                 </span>
@@ -774,7 +875,7 @@ export function EndSessionModal({
                       style={{
                         width: '100%',
                         padding: '8px 24px 8px 10px',
-                        background: discountType === 'percentage' ? 'rgba(0, 194, 255, 0.08)' : 'var(--bg-input)',
+                        background: discountType === 'percentage' ? 'rgba(223, 168, 66, 0.08)' : 'var(--bg-input)',
                         border: discountType === 'percentage' ? '1.5px solid var(--accent-cyan)' : '1px solid var(--border-default)',
                         borderRadius: '6px',
                         color: 'var(--text-primary)',
@@ -814,7 +915,7 @@ export function EndSessionModal({
                       style={{
                         width: '100%',
                         padding: '8px 28px 8px 10px',
-                        background: discountType === 'fixed' ? 'rgba(0, 194, 255, 0.08)' : 'var(--bg-input)',
+                        background: discountType === 'fixed' ? 'rgba(223, 168, 66, 0.08)' : 'var(--bg-input)',
                         border: discountType === 'fixed' ? '1.5px solid var(--accent-cyan)' : '1px solid var(--border-default)',
                         borderRadius: '6px',
                         color: 'var(--text-primary)',
@@ -935,13 +1036,13 @@ export function EndSessionModal({
             <div
               style={{
                 padding: '14px 16px',
-                background: 'linear-gradient(135deg, rgba(0, 194, 255, 0.1) 0%, rgba(0, 102, 255, 0.04) 100%)',
-                border: '1.5px solid rgba(0, 194, 255, 0.35)',
+                background: 'linear-gradient(135deg, rgba(223, 168, 66, 0.1) 0%, rgba(223, 168, 66, 0.04) 100%)',
+                border: '1.5px solid rgba(223, 168, 66, 0.35)',
                 borderRadius: '10px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '8px',
-                boxShadow: '0 0 15px rgba(0, 194, 255, 0.1)',
+                boxShadow: '0 0 15px rgba(223, 168, 66, 0.1)',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -954,7 +1055,7 @@ export function EndSessionModal({
                     fontWeight: 900,
                     color: 'var(--accent-cyan)',
                     fontFamily: 'JetBrains Mono, monospace',
-                    textShadow: '0 0 14px rgba(0, 194, 255, 0.4)',
+                    textShadow: '0 0 14px rgba(223, 168, 66, 0.4)',
                   }}
                 >
                   {formatCurrency(finalTotalCost)}
@@ -1059,7 +1160,7 @@ export function EndSessionModal({
 
                   {/* Card POS Details */}
                   {paymentMethod === 'card' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px', padding: '12px', background: 'rgba(0, 194, 255, 0.05)', border: '1px solid rgba(0, 194, 255, 0.2)', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px', padding: '12px', background: 'rgba(223, 168, 66, 0.05)', border: '1px solid rgba(223, 168, 66, 0.2)', borderRadius: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--accent-cyan)' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>credit_card</span>
                         {language === 'ar' ? 'دفع عبر ماكينة الفيزا (POS)' : 'Card Terminal (POS)'}

@@ -323,8 +323,8 @@ export default function CafeTablesPage() {
               width: '44px',
               height: '44px',
               borderRadius: '12px',
-              background: 'rgba(0, 194, 255, 0.1)',
-              border: '1px solid rgba(0, 194, 255, 0.3)',
+              background: 'rgba(223, 168, 66, 0.1)',
+              border: '1px solid rgba(223, 168, 66, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -518,12 +518,12 @@ export default function CafeTablesPage() {
                       style={{
                         padding: '4px 10px',
                         borderRadius: '8px',
-                        background: 'rgba(0, 194, 255, 0.12)',
-                        border: '1px solid rgba(0, 194, 255, 0.3)',
+                        background: 'rgba(223, 168, 66, 0.12)',
+                        border: '1px solid rgba(223, 168, 66, 0.3)',
                         color: 'var(--accent-cyan)',
                         fontWeight: 700,
                         fontSize: '14px',
-                        fontFamily: 'Space Grotesk, monospace',
+                        fontFamily: 'Plus Jakarta Sans, monospace',
                       }}
                     >
                       #{tbl.table_number}
@@ -881,8 +881,8 @@ export default function CafeTablesPage() {
                     <div
                       style={{
                         padding: '12px',
-                        background: 'rgba(0, 194, 255, 0.08)',
-                        border: '1px solid rgba(0, 194, 255, 0.2)',
+                        background: 'rgba(223, 168, 66, 0.08)',
+                        border: '1px solid rgba(223, 168, 66, 0.2)',
                         borderRadius: '8px',
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -973,8 +973,8 @@ export default function CafeTablesPage() {
                     width: '38px',
                     height: '38px',
                     borderRadius: '10px',
-                    background: 'linear-gradient(135deg, rgba(0, 194, 255, 0.2), rgba(0, 102, 255, 0.15))',
-                    border: '1px solid rgba(0, 194, 255, 0.4)',
+                    background: 'linear-gradient(135deg, rgba(223, 168, 66, 0.2), rgba(223, 168, 66, 0.15))',
+                    border: '1px solid rgba(223, 168, 66, 0.4)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -990,9 +990,9 @@ export default function CafeTablesPage() {
                         fontWeight: 600,
                         padding: '2px 10px',
                         borderRadius: '12px',
-                        background: 'rgba(0, 194, 255, 0.15)',
+                        background: 'rgba(223, 168, 66, 0.15)',
                         color: 'var(--accent-cyan)',
-                        border: '1px solid rgba(0, 194, 255, 0.3)',
+                        border: '1px solid rgba(223, 168, 66, 0.3)',
                       }}>
                         #{checkoutTable.table_number}
                       </span>
@@ -1040,7 +1040,7 @@ export default function CafeTablesPage() {
                         padding: '10px 24px',
                         fontWeight: 700,
                         fontSize: '14px',
-                        boxShadow: '0 0 16px rgba(0, 194, 255, 0.3)',
+                        boxShadow: '0 0 16px rgba(223, 168, 66, 0.3)',
                       }}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>check_circle</span>
@@ -1260,7 +1260,7 @@ export default function CafeTablesPage() {
                             style={{
                               width: '100%',
                               padding: '8px 24px 8px 10px',
-                              background: checkoutDiscountType === 'percentage' ? 'rgba(0, 194, 255, 0.08)' : 'var(--bg-input)',
+                              background: checkoutDiscountType === 'percentage' ? 'rgba(223, 168, 66, 0.08)' : 'var(--bg-input)',
                               border: checkoutDiscountType === 'percentage' ? '1.5px solid var(--accent-cyan)' : '1px solid var(--border-default)',
                               borderRadius: '6px',
                               color: 'var(--text-primary)',
@@ -1299,7 +1299,7 @@ export default function CafeTablesPage() {
                             style={{
                               width: '100%',
                               padding: '8px 28px 8px 10px',
-                              background: checkoutDiscountType === 'fixed' ? 'rgba(0, 194, 255, 0.08)' : 'var(--bg-input)',
+                              background: checkoutDiscountType === 'fixed' ? 'rgba(223, 168, 66, 0.08)' : 'var(--bg-input)',
                               border: checkoutDiscountType === 'fixed' ? '1.5px solid var(--accent-cyan)' : '1px solid var(--border-default)',
                               borderRadius: '6px',
                               color: 'var(--text-primary)',
@@ -1417,13 +1417,13 @@ export default function CafeTablesPage() {
                   <div
                     style={{
                       padding: '14px 16px',
-                      background: 'linear-gradient(135deg, rgba(0, 194, 255, 0.1) 0%, rgba(0, 102, 255, 0.04) 100%)',
-                      border: '1.5px solid rgba(0, 194, 255, 0.35)',
+                      background: 'linear-gradient(135deg, rgba(223, 168, 66, 0.1) 0%, rgba(223, 168, 66, 0.04) 100%)',
+                      border: '1.5px solid rgba(223, 168, 66, 0.35)',
                       borderRadius: '10px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '8px',
-                      boxShadow: '0 0 15px rgba(0, 194, 255, 0.1)',
+                      boxShadow: '0 0 15px rgba(223, 168, 66, 0.1)',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1436,7 +1436,7 @@ export default function CafeTablesPage() {
                           fontWeight: 900,
                           color: 'var(--accent-cyan)',
                           fontFamily: 'JetBrains Mono, monospace',
-                          textShadow: '0 0 14px rgba(0, 194, 255, 0.4)',
+                          textShadow: '0 0 14px rgba(223, 168, 66, 0.4)',
                         }}
                       >
                         {formatCurrency(finalTotal)}
@@ -1553,7 +1553,7 @@ export default function CafeTablesPage() {
 
                         {/* Bank Transfer details */}
                         {checkoutPaymentMethod === 'transfer' && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px', padding: '12px', background: 'var(--bg-input)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px', padding: '12px', background: 'var(--bg-input)', border: '1px solid rgba(223, 168, 66, 0.3)', borderRadius: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-cyan)', fontSize: '12px', fontWeight: 700 }}>
                               <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>account_balance</span>
                               <span>{language === 'ar' ? 'بيانات التحويل البنكي / InstaPay' : 'Bank Transfer / InstaPay Details'}</span>

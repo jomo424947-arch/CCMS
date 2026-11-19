@@ -17,6 +17,7 @@ import {
   registerTenant,
   getTenants,
   updateTenantStatus,
+  deleteTenant,
   triggerSync,
 } from '../controllers/auth.controller';
 import {
@@ -71,6 +72,7 @@ router.get('/callback/google', asyncHandler(googleCallback));
 router.post('/register-tenant', asyncHandler(registerTenant));
 router.get('/tenants', asyncHandler(getTenants));
 router.patch('/tenants/:id/status', asyncHandler(updateTenantStatus));
+router.delete('/tenants/:id', asyncHandler(deleteTenant));
 
 // ─── Protected routes (JWT required) ──────────────────────────────────────
 

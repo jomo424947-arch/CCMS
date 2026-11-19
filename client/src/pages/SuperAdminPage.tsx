@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { dataService } from '../services';
 import { apiErrorMessage } from '../services/http';
+import { useToast } from '../context/ToastContext';
 
 export type PlanType = 'monthly_mobile' | 'monthly_full' | 'quarterly_full' | 'yearly_full' | 'trial';
 export type StatusType = 'active' | 'trial' | 'suspended';
@@ -128,7 +130,10 @@ export interface Tenant {
 }
 
 export default function SuperAdminPage() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [adminSecret, setAdminSecret] = useState(sessionStorage.getItem('ccms_super_admin_key') || '');
+  const [isKeyVerified, setIsKeyVerified] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
   const [activeTab, setActiveTab] = useState<'list' | 'add' | 'plans'>('list');
 
@@ -163,9 +168,11 @@ export default function SuperAdminPage() {
     id: string;
     name: string;
     owner_email: string;
+    status: StatusType;
     pass?: string;
     plan?: PlanType;
     expires_at?: string;
+    created_at: string;
   } | null>(null);
 
   // Manage / Edit Modal States
@@ -174,10 +181,16 @@ export default function SuperAdminPage() {
   const [editStatus, setEditStatus] = useState<StatusType>('active');
   const [editExpiryDate, setEditExpiryDate] = useState<string>('');
   const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
-  // Helper to get plan info
+  // Delete Confirmation Modal State
+  const [deletingTenant, setDeletingTenant] = useState<Tenant | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Helper to get plan info (handles annual_full legacy alias)
   const getPlanInfo = (planKey?: string): SubscriptionPlan => {
-    return SUBSCRIPTION_PLANS.find(p => p.id === planKey) || SUBSCRIPTION_PLANS[1]; // default monthly_full
+    const normalized = planKey === 'annual_full' ? 'yearly_full' : planKey;
+    return SUBSCRIPTION_PLANS.find(p => p.id === normalized) || SUBSCRIPTION_PLANS[1];
   };
 
   // Helper to compute default expiry date string (YYYY-MM-DD)
@@ -201,19 +214,23 @@ export default function SuperAdminPage() {
   // Save admin secret key to sessionStorage
   const handleSecretChange = (val: string) => {
     setAdminSecret(val);
+    setIsKeyVerified(false);
     sessionStorage.setItem('ccms_super_admin_key', val);
   };
 
   const handleClearSecret = () => {
     setAdminSecret('');
+    setIsKeyVerified(false);
     sessionStorage.removeItem('ccms_super_admin_key');
     setTenants([]);
     setListError(null);
+    setAddError(null);
   };
 
-  const fetchTenants = async () => {
+  const fetchTenants = async (silent = false) => {
     if (!adminSecret.trim()) {
-      setListError('يرجى إدخال رمز المطور السري في الأعلى للاتصال بقواعد بيانات المشتركين.');
+      setIsKeyVerified(false);
+      setListError('يرجى إدخال مفتاح الأمان الرئيسي في الأعلى لعرض وإدارة الصالات.');
       setTenants([]);
       return;
     }
@@ -223,21 +240,27 @@ export default function SuperAdminPage() {
       const res = await dataService.getTenants(adminSecret.trim());
       if (res.success) {
         setTenants(res.tenants || []);
+        setIsKeyVerified(true);
+        if (!silent) {
+          toast(`تم الاتصال بنجاح — تم جلب ${(res.tenants || []).length} صالة`, 'success');
+        }
       }
     } catch (err) {
-      setListError(apiErrorMessage(err, 'فشل الاتصال أو جلب المشتركين. تأكد من صحة الرمز السري.'));
+      setIsKeyVerified(false);
+      setListError(apiErrorMessage(err, 'فشل الاتصال أو جلب الصالات. تأكد من صحة مفتاح الأمان السري.'));
       setTenants([]);
     } finally {
       setListLoading(false);
     }
   };
 
-  // Fetch automatically on tab change or secret key presence
+  // Fetch once on initial mount if a secret key is already saved in sessionStorage
   useEffect(() => {
     if (adminSecret.trim()) {
-      fetchTenants();
+      fetchTenants(true);
     }
-  }, [activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Quick Password Generator
   const generateRandomPassword = () => {
@@ -257,12 +280,22 @@ export default function SuperAdminPage() {
     setNewTenantInfo(null);
 
     if (!adminSecret.trim()) {
-      setAddError('رمز المرور السري للمطور مطلوب للاتصال بالسحابة.');
+      setAddError('مفتاح الأمان السري للمطور مطلوب في الأعلى قبل إضافة الصالة.');
       return;
     }
 
     if (!tenantName.trim() || !ownerFullName.trim() || !ownerEmail.trim() || !ownerPassword) {
       setAddError('جميع الحقول مطلوبة لتسجيل الصالة.');
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail.trim())) {
+      setAddError('يرجى إدخال بريد إلكتروني صحيح للمالك.');
+      return;
+    }
+
+    if (ownerPassword.length < 6) {
+      setAddError('كلمة مرور المالك يجب أن تكون 6 أحرف على الأقل.');
       return;
     }
 
@@ -273,7 +306,7 @@ export default function SuperAdminPage() {
       const res = await dataService.registerTenant({
         tenantName: tenantName.trim(),
         ownerFullName: ownerFullName.trim(),
-        ownerEmail: ownerEmail.trim(),
+        ownerEmail: ownerEmail.trim().toLowerCase(),
         ownerPassword,
         status: selectedStatus,
         plan: selectedPlan,
@@ -282,21 +315,26 @@ export default function SuperAdminPage() {
       });
 
       if (res.success) {
+        setIsKeyVerified(true);
         setNewTenantInfo({
-          ...res.tenant,
+          id: res.tenant.id,
+          name: res.tenant.name,
+          owner_email: res.tenant.owner_email,
+          status: (res.tenant.status as StatusType) || selectedStatus,
           pass: ownerPassword,
-          plan: selectedPlan,
-          expires_at: computedExpiry,
+          plan: (res.tenant.plan as PlanType) || selectedPlan,
+          expires_at: res.tenant.expires_at || computedExpiry,
+          created_at: res.tenant.created_at || new Date().toISOString(),
         });
+        toast(`تم تسجيل الصالة "${res.tenant.name}" بنجاح!`, 'success');
         setTenantName('');
         setOwnerFullName('');
         setOwnerEmail('');
         setOwnerPassword('');
-        // Refresh list
-        fetchTenants();
+        fetchTenants(true);
       }
     } catch (err) {
-      setAddError(apiErrorMessage(err, 'فشل تسجيل المشترك الجديد. يرجى التحقق من الرمز السري والبيانات.'));
+      setAddError(apiErrorMessage(err, 'فشل تسجيل الصالة الجديدة. يرجى التحقق من مفتاح الأمان والبيانات.'));
     } finally {
       setAddLoading(false);
     }
@@ -334,23 +372,44 @@ export default function SuperAdminPage() {
               : t
           )
         );
+        toast('تم تحديث حالة اشتراك الصالة بنجاح', 'success');
       }
     } catch (err) {
-      alert(apiErrorMessage(err, 'تعذر تحديث حالة الاشتراك.'));
+      toast(apiErrorMessage(err, 'تعذر تحديث حالة الاشتراك.'), 'error');
     } finally {
       setUpdatingId(null);
     }
   };
 
+  // Delete tenant handler
+  const handleConfirmDeleteTenant = async () => {
+    if (!deletingTenant || !adminSecret.trim()) return;
+    setDeleteLoading(true);
+    try {
+      const res = await dataService.deleteTenant(deletingTenant.id, adminSecret.trim());
+      if (res.success) {
+        setTenants(prev => prev.filter(t => t.id !== deletingTenant.id));
+        toast(`تم حذف الصالة "${deletingTenant.name}" نهائياً`, 'success');
+        setDeletingTenant(null);
+      }
+    } catch (err) {
+      toast(apiErrorMessage(err, 'تعذر حذف الصالة.'), 'error');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   // Open Edit/Renewal Modal
   const openEditModal = (tenant: Tenant) => {
+    setEditError(null);
     setEditingTenant(tenant);
-    setEditPlan(tenant.plan || (tenant.status === 'trial' ? 'trial' : 'monthly_full'));
+    const normalizedPlan = ((tenant.plan as string) === 'annual_full' ? 'yearly_full' : tenant.plan) as PlanType | undefined;
+    setEditPlan(normalizedPlan || (tenant.status === 'trial' ? 'trial' : 'monthly_full'));
     setEditStatus(tenant.status);
     if (tenant.expires_at) {
       setEditExpiryDate(new Date(tenant.expires_at).toISOString().split('T')[0]);
     } else {
-      setEditExpiryDate(computeExpiryDateForPlan(tenant.plan || 'monthly_full'));
+      setEditExpiryDate(computeExpiryDateForPlan(normalizedPlan || 'monthly_full'));
     }
   };
 
@@ -368,6 +427,7 @@ export default function SuperAdminPage() {
     if (!editingTenant || !adminSecret.trim()) return;
 
     setEditLoading(true);
+    setEditError(null);
     try {
       const computedExpiry = editExpiryDate ? new Date(editExpiryDate).toISOString() : undefined;
       const res = await dataService.updateTenantStatus(
@@ -395,18 +455,22 @@ export default function SuperAdminPage() {
               : t
           )
         );
+        toast('تم حفظ وتحديث اشتراك الصالة بنجاح', 'success');
         setEditingTenant(null);
       }
     } catch (err) {
-      alert(apiErrorMessage(err, 'فشل حفظ تعديلات الاشتراك.'));
+      const msg = apiErrorMessage(err, 'فشل حفظ تعديلات الاشتراك.');
+      setEditError(msg);
+      toast(msg, 'error');
     } finally {
       setEditLoading(false);
     }
   };
 
   const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(text).catch(() => {});
     setCopiedId(id);
+    toast('تم النسخ للحافظة', 'success');
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -433,21 +497,24 @@ export default function SuperAdminPage() {
       `⏳ *تاريخ انتهاء الصلاحية:* ${expiryFormatted}\n\n` +
       `🔑 *كود التنشيط السحابي (Tenant ID):*\n\`${tenant.id}\`\n\n` +
       `👤 *البريد الإلكتروني للحساب:* ${tenant.owner_email}\n\n` +
-      `📌 *طريقة التفعيل:* افتح البرنامج واضغط على "تنشيط الصالة"، ثم الصق كود التنشيط (Tenant ID) لتبدأ بالعمل فوراً.`
+      `📌 *طريقة التفعيل:* افتح البرنامج وسجّل الدخول بالبريد وكلمة المرور أو الصق كود التنشيط (Tenant ID) لتبدأ بالعمل فوراً.`
     );
   };
 
   const copyActivationSnippet = (tenant: Tenant) => {
     const message = generateActivationText(tenant);
-    navigator.clipboard.writeText(message);
+    navigator.clipboard.writeText(message).catch(() => {});
     setCopiedSnippetId(tenant.id);
+    toast('تم نسخ رسالة التنشيط كاملة للحافظة!', 'success');
     setTimeout(() => setCopiedSnippetId(null), 2500);
   };
 
   const shareViaWhatsApp = (tenant: Tenant) => {
     const message = generateActivationText(tenant);
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    navigator.clipboard.writeText(message).catch(() => {});
+    setCopiedSnippetId(tenant.id);
+    toast('تم نسخ رسالة التفعيل الجاهزة للواتساب — يمكنك لصقها مباشرة في محادثة العميل.', 'success');
+    setTimeout(() => setCopiedSnippetId(null), 2500);
   };
 
   // Helper to calculate days remaining
@@ -548,21 +615,20 @@ export default function SuperAdminPage() {
         {/* Header matching main app navbar */}
         <header className="ccms-admin-header">
           <div className="header-brand-side">
-            <div className="brand-logo-badge">
-              <span className="material-symbols-outlined brand-icon">sports_esports</span>
-              <span className="ccms-badge-pill">CCMS</span>
+            <div className="brand-logo-badge" style={{ padding: 0, overflow: 'hidden', background: '#0B0B0D' }}>
+              <img src="./ccms-logo.svg" alt="CCMS Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
             </div>
             <div className="brand-titles">
-              <h1 className="main-brand-title">Italiano <span className="sub-tag">لوحة تحكم المسؤول</span></h1>
-              <p className="sub-brand-desc">إدارة بيئات المشتركين وتراخيص السحابة المعتمدة (Supabase Cloud Multi-Tenant)</p>
+              <h1 className="main-brand-title">CCMS <span className="sub-tag">إدارة الصالات</span></h1>
+              <p className="sub-brand-desc">إدارة الصالات والاشتراكات والتراخيص المفعّلة</p>
             </div>
           </div>
 
           <div className="header-controls-side">
-            {tenants.length > 0 && (
+            {isKeyVerified && (
               <div className="cloud-live-pill">
                 <span className="live-pulse-dot" />
-                <span>متصل بالسحابة ({tenants.length} صالة)</span>
+                <span>مفتاح الأمان مفعّل ({tenants.length} صالة)</span>
               </div>
             )}
 
@@ -575,12 +641,12 @@ export default function SuperAdminPage() {
               title="تسجيل صالة جديدة"
             >
               <span className="material-symbols-outlined">add</span>
-              + تسجيل صالة جديدة
+              تسجيل صالة جديدة
             </button>
 
             <button
               type="button"
-              onClick={fetchTenants}
+              onClick={() => fetchTenants(false)}
               disabled={listLoading || !adminSecret.trim()}
               className="ccms-btn-app-secondary"
               title="تحديث البيانات من السحابة"
@@ -591,10 +657,15 @@ export default function SuperAdminPage() {
               تحديث
             </button>
 
-            <a href="/login" className="ccms-btn-app-secondary" title="العودة لشاشة تسجيل الدخول">
-              <span className="material-symbols-outlined">logout</span>
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              className="ccms-btn-app-secondary"
+              title="العودة للتطبيق الرئيسي"
+            >
+              <span className="material-symbols-outlined">arrow_back</span>
               العودة للتطبيق
-            </a>
+            </button>
           </div>
         </header>
 
@@ -606,8 +677,8 @@ export default function SuperAdminPage() {
                 <span className="material-symbols-outlined">vpn_key</span>
               </div>
               <div className="dock-text">
-                <h3>مفتاح الوصول السري للمطور (Super Admin Secret Key)</h3>
-                <p>مفتاح التشفير المصرح به للتحكم في قواعد بيانات الصالات وتنشيط التراخيص السحابية</p>
+                <h3>مفتاح الأمان الرئيسي</h3>
+                <p>أدخل مفتاح الأمان لإدارة الصالات والاشتراكات وتفعيل التراخيص</p>
               </div>
             </div>
 
@@ -616,10 +687,10 @@ export default function SuperAdminPage() {
                 <span className="material-symbols-outlined field-icon">lock</span>
                 <input
                   type={showSecret ? 'text' : 'password'}
-                  placeholder="أدخل مفتاح المطور السري (SUPER_ADMIN_KEY)..."
+                  placeholder="أدخل مفتاح الأمان الرئيسي..."
                   value={adminSecret}
                   onChange={(e) => handleSecretChange(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && fetchTenants()}
+                  onKeyDown={(e) => e.key === 'Enter' && fetchTenants(false)}
                   className="secret-input"
                 />
                 <button
@@ -637,14 +708,14 @@ export default function SuperAdminPage() {
               <div className="dock-btns-row">
                 <button
                   type="button"
-                  onClick={fetchTenants}
+                  onClick={() => fetchTenants(false)}
                   disabled={listLoading || !adminSecret.trim()}
                   className="ccms-btn-app-primary"
                 >
                   <span className={`material-symbols-outlined ${listLoading ? 'spin-anim' : ''}`}>
-                    {listLoading ? 'progress_activity' : 'sync'}
+                    {listLoading ? 'progress_activity' : isKeyVerified ? 'verified' : 'sync'}
                   </span>
-                  {listLoading ? 'جاري المزامنة...' : 'ربط وجلب الصالات'}
+                  {listLoading ? 'جاري التحقق...' : isKeyVerified ? 'مُتصل · تحديث الصالات' : 'تفعيل المفتاح وجلب الصالات'}
                 </button>
 
                 {adminSecret && (
@@ -667,10 +738,10 @@ export default function SuperAdminPage() {
         {tenants.length > 0 && (
           <section className="metrics-grid">
             {/* 1. Total Tenants */}
-            <div className="ccms-stat-box" style={{ borderTop: '1px solid #00c2ff' }}>
+            <div className="ccms-stat-box" style={{ borderTop: '1px solid #DFA842' }}>
               <div className="stat-box-header">
                 <span className="stat-box-label">إجمالي الصالات المسجلة</span>
-                <span className="material-symbols-outlined stat-icon" style={{ color: '#00c2ff' }}>
+                <span className="material-symbols-outlined stat-icon" style={{ color: '#DFA842' }}>
                   storefront
                 </span>
               </div>
@@ -678,7 +749,7 @@ export default function SuperAdminPage() {
                 <span className="stat-box-val">{stats.total}</span>
                 <span className="stat-box-unit">صالة مسجلة</span>
               </div>
-              <div className="stat-bottom-line" style={{ background: '#00c2ff', width: '100%', boxShadow: '0 0 10px #00c2ff' }} />
+              <div className="stat-bottom-line" style={{ background: '#DFA842', width: '100%', boxShadow: '0 0 10px #DFA842' }} />
             </div>
 
             {/* 2. Active Subscriptions */}
@@ -697,10 +768,10 @@ export default function SuperAdminPage() {
             </div>
 
             {/* 3. Estimated MRR */}
-            <div className="ccms-stat-box" style={{ borderTop: '1px solid #00c2ff' }}>
+            <div className="ccms-stat-box" style={{ borderTop: '1px solid #DFA842' }}>
               <div className="stat-box-header">
                 <span className="stat-box-label">تقدير الدخل الشهري (MRR)</span>
-                <span className="material-symbols-outlined stat-icon" style={{ color: '#00c2ff' }}>
+                <span className="material-symbols-outlined stat-icon" style={{ color: '#DFA842' }}>
                   payments
                 </span>
               </div>
@@ -708,7 +779,7 @@ export default function SuperAdminPage() {
                 <span className="stat-box-val">{stats.estimatedMRR.toLocaleString('ar-EG')}</span>
                 <span className="stat-box-unit">جنيه</span>
               </div>
-              <div className="stat-bottom-line" style={{ background: '#00c2ff', width: '75%', boxShadow: '0 0 10px #00c2ff' }} />
+              <div className="stat-bottom-line" style={{ background: '#DFA842', width: '75%', boxShadow: '0 0 10px #DFA842' }} />
             </div>
 
             {/* 4. Expiring / Alerts */}
@@ -847,7 +918,7 @@ export default function SuperAdminPage() {
 
                 <button
                   type="button"
-                  onClick={fetchTenants}
+                  onClick={() => fetchTenants(false)}
                   disabled={listLoading || !adminSecret.trim()}
                   className="ccms-btn-app-secondary"
                   title="تحديث البيانات من السحابة"
@@ -872,14 +943,14 @@ export default function SuperAdminPage() {
             {listLoading && tenants.length === 0 ? (
               <div className="empty-state-box">
                 <div className="spinner-large" />
-                <h4>جاري الاتصال بالسحابة وجلب بيانات المشتركين...</h4>
-                <p>يتم الآن التحقق من رمز المطور السري واسترداد التراخيص وقواعد البيانات.</p>
+                <h4>جاري تحميل بيانات الصالات...</h4>
+                <p>يتم الآن التحقق من مفتاح الأمان وجلب قائمة الصالات والاشتراكات.</p>
               </div>
             ) : tenants.length === 0 ? (
               <div className="empty-state-box">
-                <span className="material-symbols-outlined empty-icon">cloud_off</span>
+                <span className="material-symbols-outlined empty-icon">storefront</span>
                 <h4>لا توجد بيانات صالات معروضة</h4>
-                <p>أدخل رمز مرور المطور السري في الأعلى ثم اضغط على زر "ربط وجلب الصالات".</p>
+                <p>أدخل مفتاح الأمان الرئيسي في الأعلى ثم اضغط على زر "ربط وجلب الصالات".</p>
               </div>
             ) : filteredTenants.length === 0 ? (
               <div className="empty-state-box">
@@ -1047,6 +1118,22 @@ export default function SuperAdminPage() {
                                   {isSnippetCopied ? 'done_all' : 'share'}
                                 </span>
                                 <span>{isSnippetCopied ? 'تم النسخ!' : 'نسخ الرسالة'}</span>
+                              </button>
+
+                              {/* Delete Tenant */}
+                              <button
+                                type="button"
+                                onClick={() => setDeletingTenant(tenant)}
+                                className="action-icon-btn"
+                                style={{
+                                  background: 'rgba(239, 68, 68, 0.1)',
+                                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                                  color: '#f87171',
+                                }}
+                                title="حذف الصالة نهائياً"
+                              >
+                                <span className="material-symbols-outlined">delete</span>
+                                <span>حذف</span>
                               </button>
                             </div>
                           </td>
@@ -1393,16 +1480,16 @@ export default function SuperAdminPage() {
                             id: newTenantInfo.id,
                             name: newTenantInfo.name,
                             owner_email: newTenantInfo.owner_email,
-                            status: selectedStatus,
+                            status: newTenantInfo.status,
                             plan: newTenantInfo.plan,
                             expires_at: newTenantInfo.expires_at,
-                            created_at: new Date().toISOString(),
+                            created_at: newTenantInfo.created_at,
                           })
                         }
                         className="btn-whatsapp-share"
                       >
                         <span className="material-symbols-outlined">chat</span>
-                        إرسال للعميل عبر واتساب
+                        نسخ رسالة التفعيل للواتساب
                       </button>
 
                       <button
@@ -1412,10 +1499,10 @@ export default function SuperAdminPage() {
                             id: newTenantInfo.id,
                             name: newTenantInfo.name,
                             owner_email: newTenantInfo.owner_email,
-                            status: selectedStatus,
+                            status: newTenantInfo.status,
                             plan: newTenantInfo.plan,
                             expires_at: newTenantInfo.expires_at,
-                            created_at: new Date().toISOString(),
+                            created_at: newTenantInfo.created_at,
                           })
                         }
                         className="btn-copy-all"
@@ -1521,6 +1608,13 @@ export default function SuperAdminPage() {
             </div>
 
             <form onSubmit={handleSaveTenantEdit} className="modal-body-form">
+              {editError && (
+                <div className="alert-banner error-banner">
+                  <span className="material-symbols-outlined">error</span>
+                  <span>{editError}</span>
+                </div>
+              )}
+
               {/* Plan Picker */}
               <div className="modal-field">
                 <label>تغيير / ترقية باقة الاشتراك:</label>
@@ -1644,6 +1738,57 @@ export default function SuperAdminPage() {
         </div>
       )}
 
+      {/* DELETE TENANT CONFIRMATION MODAL */}
+      {deletingTenant && (
+        <div className="modal-overlay" onClick={() => !deleteLoading && setDeletingTenant(null)}>
+          <div className="modal-container" style={{ maxWidth: '460px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-header-title">
+                <span className="material-symbols-outlined modal-header-icon" style={{ color: '#ef4444' }}>warning</span>
+                <div>
+                  <h3>تأكيد حذف الصالة</h3>
+                  <p>{deletingTenant.name} ({deletingTenant.owner_email})</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => !deleteLoading && setDeletingTenant(null)}
+                className="btn-close-modal"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-body-form">
+              <p style={{ margin: 0, color: '#d4d4d8', fontSize: '14px', lineHeight: 1.7 }}>
+                هل أنت متأكد من حذف الصالة <strong>«{deletingTenant.name}»</strong> وحساب المالك المرتبط بها نهائياً؟ لا يمكن التراجع عن هذا الإجراء.
+              </p>
+              <div className="modal-footer-actions">
+                <button
+                  type="button"
+                  disabled={deleteLoading}
+                  onClick={() => setDeletingTenant(null)}
+                  className="btn-modal-cancel"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="button"
+                  disabled={deleteLoading}
+                  onClick={handleConfirmDeleteTenant}
+                  className="btn-modal-save"
+                  style={{ background: '#dc2626' }}
+                >
+                  <span className={`material-symbols-outlined ${deleteLoading ? 'spin-anim' : ''}`}>
+                    {deleteLoading ? 'progress_activity' : 'delete_forever'}
+                  </span>
+                  {deleteLoading ? 'جاري الحذف...' : 'تأكيد الحذف النهائي'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ══════════════════════════════════════════════════════════════════════════
          CCMS APPLICATION BRAND IDENTITY & STYLING
       ══════════════════════════════════════════════════════════════════════════ */}
@@ -1691,13 +1836,13 @@ export default function SuperAdminPage() {
           width: 46px;
           height: 46px;
           border-radius: 12px;
-          background: rgba(0, 194, 255, 0.1);
-          border: 1px solid rgba(0, 194, 255, 0.3);
+          background: rgba(223, 168, 66, 0.1);
+          border: 1px solid rgba(223, 168, 66, 0.3);
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          color: var(--accent-cyan, #00c2ff);
+          color: var(--accent-cyan, #DFA842);
         }
         .brand-logo-badge .brand-icon {
           font-size: 20px;
@@ -1767,21 +1912,21 @@ export default function SuperAdminPage() {
           align-items: center;
           justify-content: center;
           gap: 8px;
-          background: #0070f3;
-          color: #ffffff !important;
+          background: var(--btn-primary-bg, #DFA842);
+          color: var(--btn-primary-text, #0C0C0E) !important;
           border: none;
-          border-radius: 8px;
+          border-radius: 10px;
           padding: 10px 18px;
           font-size: 13px;
           font-weight: 700;
           cursor: pointer;
-          transition: all 0.2s ease;
-          box-shadow: 0 0 15px rgba(0, 112, 243, 0.4);
+          transition: all 0.18s ease;
+          box-shadow: 0 2px 12px rgba(223, 168, 66, 0.22);
           text-decoration: none;
         }
         .ccms-btn-app-primary:hover:not(:disabled) {
-          background: #0060df;
-          box-shadow: 0 0 25px rgba(0, 112, 243, 0.6);
+          background: var(--btn-primary-hover, #E9B95B);
+          box-shadow: 0 6px 20px rgba(223, 168, 66, 0.32);
           transform: translateY(-1px);
         }
         .ccms-btn-app-primary:disabled {
@@ -1795,8 +1940,8 @@ export default function SuperAdminPage() {
           align-items: center;
           justify-content: center;
           gap: 8px;
-          background: rgba(0, 194, 255, 0.05);
-          border: 1px solid rgba(0, 194, 255, 0.25);
+          background: rgba(223, 168, 66, 0.05);
+          border: 1px solid rgba(223, 168, 66, 0.25);
           color: #ffffff !important;
           border-radius: 8px;
           padding: 9px 16px;
@@ -1807,8 +1952,8 @@ export default function SuperAdminPage() {
           text-decoration: none;
         }
         .ccms-btn-app-secondary:hover:not(:disabled) {
-          background: rgba(0, 194, 255, 0.12);
-          border-color: rgba(0, 194, 255, 0.4);
+          background: rgba(223, 168, 66, 0.12);
+          border-color: rgba(223, 168, 66, 0.4);
           transform: translateY(-1px);
         }
         .ccms-btn-app-secondary:disabled {
@@ -1834,7 +1979,8 @@ export default function SuperAdminPage() {
           display: flex;
           align-items: center;
           gap: 14px;
-          min-width: 300px;
+          min-width: 0;
+          flex: 1 1 240px;
         }
         .dock-icon-circle {
           width: 42px;
@@ -1846,6 +1992,7 @@ export default function SuperAdminPage() {
           align-items: center;
           justify-content: center;
           color: #f59e0b;
+          flex-shrink: 0;
         }
         .dock-text h3 {
           margin: 0;
@@ -1862,9 +2009,9 @@ export default function SuperAdminPage() {
           display: flex;
           align-items: center;
           gap: 12px;
-          flex: 1;
+          flex: 1 1 260px;
           justify-content: flex-end;
-          min-width: 320px;
+          min-width: 0;
           flex-wrap: wrap;
         }
         .secret-field-wrapper {
@@ -1893,8 +2040,8 @@ export default function SuperAdminPage() {
           transition: all 0.2s;
         }
         .secret-input:focus {
-          border-color: var(--accent-cyan, #00c2ff);
-          box-shadow: 0 0 12px rgba(0, 194, 255, 0.2);
+          border-color: var(--accent-cyan, #DFA842);
+          box-shadow: 0 0 12px rgba(223, 168, 66, 0.2);
         }
         .btn-toggle-secret {
           position: absolute;
@@ -1935,7 +2082,7 @@ export default function SuperAdminPage() {
           transition: border-color 0.2s ease, transform 0.2s ease;
         }
         .ccms-stat-box:hover {
-          border-color: var(--border-glow, rgba(0, 194, 255, 0.3));
+          border-color: var(--border-glow, rgba(223, 168, 66, 0.3));
           transform: translateY(-2px);
         }
         .stat-box-header {
@@ -1962,7 +2109,7 @@ export default function SuperAdminPage() {
           font-weight: 800;
           color: #ffffff;
           line-height: 1.1;
-          font-family: 'Space Grotesk', 'JetBrains Mono', sans-serif;
+          font-family: 'Plus Jakarta Sans', 'JetBrains Mono', sans-serif;
         }
         .stat-box-unit {
           font-size: 13px;
@@ -2014,12 +2161,12 @@ export default function SuperAdminPage() {
           border: 1px solid transparent;
         }
         .plan-stat-chip.indigo {
-          background: rgba(99, 102, 241, 0.12);
-          color: #a5b4fc;
+          background: rgba(196, 138, 105, 0.14);
+          color: #D8A98E;
         }
         .plan-stat-chip.cyan {
-          background: rgba(0, 194, 255, 0.12);
-          color: #67e8f9;
+          background: rgba(223, 168, 66, 0.14);
+          color: #F2C97D;
         }
         .plan-stat-chip.emerald {
           background: rgba(34, 197, 94, 0.12);
@@ -2069,9 +2216,9 @@ export default function SuperAdminPage() {
           background: rgba(255, 255, 255, 0.05);
         }
         .tab-btn.active {
-          background: #0070f3;
+          background: #DFA842;
           color: #ffffff;
-          box-shadow: 0 0 15px rgba(0, 112, 243, 0.4);
+          box-shadow: 0 0 15px rgba(223, 168, 66, 0.4);
         }
         .tab-count {
           background: rgba(255, 255, 255, 0.2);
@@ -2109,8 +2256,8 @@ export default function SuperAdminPage() {
         }
         .search-box-wrapper {
           position: relative;
-          flex: 1;
-          min-width: 260px;
+          flex: 1 1 200px;
+          min-width: 0;
           max-width: 380px;
           display: flex;
           align-items: center;
@@ -2134,8 +2281,8 @@ export default function SuperAdminPage() {
           transition: all 0.2s;
         }
         .search-input:focus {
-          border-color: var(--accent-cyan, #00c2ff);
-          box-shadow: 0 0 12px rgba(0, 194, 255, 0.2);
+          border-color: var(--accent-cyan, #DFA842);
+          box-shadow: 0 0 12px rgba(223, 168, 66, 0.2);
         }
         .clear-search-btn {
           position: absolute;
@@ -2171,9 +2318,9 @@ export default function SuperAdminPage() {
           color: #ffffff;
         }
         .filter-btn.active {
-          background: rgba(0, 194, 255, 0.15);
-          border-color: var(--accent-cyan, #00c2ff);
-          color: var(--accent-cyan, #00c2ff);
+          background: rgba(223, 168, 66, 0.15);
+          border-color: var(--accent-cyan, #DFA842);
+          color: var(--accent-cyan, #DFA842);
           font-weight: 700;
         }
         .toolbar-actions-group {
@@ -2223,9 +2370,9 @@ export default function SuperAdminPage() {
           width: 38px;
           height: 38px;
           border-radius: 8px;
-          background: rgba(0, 194, 255, 0.1);
-          border: 1px solid rgba(0, 194, 255, 0.25);
-          color: var(--accent-cyan, #00c2ff);
+          background: rgba(223, 168, 66, 0.1);
+          border: 1px solid rgba(223, 168, 66, 0.25);
+          color: var(--accent-cyan, #DFA842);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -2268,8 +2415,8 @@ export default function SuperAdminPage() {
           transition: all 0.2s;
         }
         .tenant-id-pill:hover {
-          border-color: var(--accent-cyan, #00c2ff);
-          background: rgba(0, 194, 255, 0.08);
+          border-color: var(--accent-cyan, #DFA842);
+          background: rgba(223, 168, 66, 0.08);
         }
         .tenant-id-pill.copied {
           background: rgba(34, 197, 94, 0.15);
@@ -2290,13 +2437,13 @@ export default function SuperAdminPage() {
           border: 1px solid transparent;
         }
         .plan-badge-tag.indigo {
-          background: rgba(99, 102, 241, 0.15);
-          border-color: rgba(99, 102, 241, 0.3);
+          background: rgba(196, 138, 105, 0.15);
+          border-color: rgba(196, 138, 105, 0.3);
           color: #a5b4fc;
         }
         .plan-badge-tag.cyan {
-          background: rgba(0, 194, 255, 0.15);
-          border-color: rgba(0, 194, 255, 0.3);
+          background: rgba(223, 168, 66, 0.15);
+          border-color: rgba(223, 168, 66, 0.3);
           color: #67e8f9;
         }
         .plan-badge-tag.emerald {
@@ -2386,12 +2533,12 @@ export default function SuperAdminPage() {
           transition: all 0.15s;
         }
         .action-icon-btn.renew {
-          background: rgba(0, 112, 243, 0.15);
-          border-color: rgba(0, 112, 243, 0.35);
-          color: #60a5fa;
+          background: rgba(223, 168, 66, 0.15);
+          border-color: rgba(223, 168, 66, 0.35);
+          color: #DFA842;
         }
         .action-icon-btn.renew:hover {
-          background: #0070f3;
+          background: #DFA842;
           color: #ffffff;
         }
         .action-icon-btn.whatsapp {
@@ -2441,7 +2588,7 @@ export default function SuperAdminPage() {
           gap: 8px;
           font-size: 14px;
           font-weight: 700;
-          color: var(--accent-cyan, #00c2ff);
+          color: var(--accent-cyan, #DFA842);
           margin-bottom: 12px;
         }
 
@@ -2467,9 +2614,9 @@ export default function SuperAdminPage() {
           transform: translateY(-2px);
         }
         .plan-select-card.selected {
-          border-color: #0070f3;
-          background: rgba(0, 112, 243, 0.1);
-          box-shadow: 0 0 15px rgba(0, 112, 243, 0.2);
+          border-color: #DFA842;
+          background: rgba(223, 168, 66, 0.1);
+          box-shadow: 0 0 15px rgba(223, 168, 66, 0.2);
         }
         .card-selection-indicator {
           position: absolute;
@@ -2478,7 +2625,7 @@ export default function SuperAdminPage() {
           color: #71717a;
         }
         .plan-select-card.selected .card-selection-indicator {
-          color: #0070f3;
+          color: #DFA842;
         }
         .plan-card-title {
           margin: 0;
@@ -2505,7 +2652,7 @@ export default function SuperAdminPage() {
           border-radius: 8px;
         }
         .tag-pill-badge.popular {
-          background: #0070f3;
+          background: #DFA842;
           color: #ffffff;
         }
         .tag-pill-badge.best {
@@ -2547,7 +2694,7 @@ export default function SuperAdminPage() {
         .btn-text-gen {
           background: none;
           border: none;
-          color: var(--accent-cyan, #00c2ff);
+          color: var(--accent-cyan, #DFA842);
           font-size: 12px;
           font-weight: 600;
           cursor: pointer;
@@ -2576,8 +2723,8 @@ export default function SuperAdminPage() {
           transition: all 0.2s;
         }
         .modern-input:focus {
-          border-color: var(--accent-cyan, #00c2ff);
-          box-shadow: 0 0 12px rgba(0, 194, 255, 0.2);
+          border-color: var(--accent-cyan, #DFA842);
+          box-shadow: 0 0 12px rgba(223, 168, 66, 0.2);
         }
         .btn-toggle-eye {
           position: absolute;
@@ -2638,7 +2785,7 @@ export default function SuperAdminPage() {
           align-items: center;
           justify-content: center;
           gap: 10px;
-          background: #0070f3;
+          background: #DFA842;
           color: #ffffff;
           border: none;
           border-radius: 8px;
@@ -2647,11 +2794,11 @@ export default function SuperAdminPage() {
           font-weight: 700;
           cursor: pointer;
           transition: all 0.2s;
-          box-shadow: 0 0 20px rgba(0, 112, 243, 0.4);
+          box-shadow: 0 0 20px rgba(223, 168, 66, 0.4);
         }
         .btn-submit-registration:hover:not(:disabled) {
-          background: #0060df;
-          box-shadow: 0 0 30px rgba(0, 112, 243, 0.6);
+          background: #E9B95B;
+          box-shadow: 0 0 30px rgba(223, 168, 66, 0.6);
         }
         .btn-submit-registration:disabled {
           opacity: 0.5;
@@ -2689,8 +2836,8 @@ export default function SuperAdminPage() {
           gap: 6px;
           font-size: 11px;
           font-weight: 800;
-          color: var(--accent-cyan, #00c2ff);
-          background: rgba(0, 194, 255, 0.1);
+          color: var(--accent-cyan, #DFA842);
+          background: rgba(223, 168, 66, 0.1);
           padding: 4px 10px;
           border-radius: 20px;
         }
@@ -2741,7 +2888,7 @@ export default function SuperAdminPage() {
           gap: 6px;
           font-size: 13px;
           font-weight: 700;
-          color: var(--accent-cyan, #00c2ff);
+          color: var(--accent-cyan, #DFA842);
         }
         .highlight-plan-price {
           font-size: 15px;
@@ -2764,7 +2911,7 @@ export default function SuperAdminPage() {
         .card-id-block code {
           font-family: 'JetBrains Mono', monospace;
           font-size: 11px;
-          color: var(--accent-cyan, #00c2ff);
+          color: var(--accent-cyan, #DFA842);
         }
         .card-expiry-block span {
           font-size: 12px;
@@ -2824,7 +2971,7 @@ export default function SuperAdminPage() {
         }
         .cred-val-box code {
           font-family: 'JetBrains Mono', monospace;
-          color: var(--accent-cyan, #00c2ff);
+          color: var(--accent-cyan, #DFA842);
         }
         .btn-copy-mini {
           display: flex;
@@ -2883,7 +3030,7 @@ export default function SuperAdminPage() {
           border-color: rgba(255, 255, 255, 0.25);
         }
         .plan-showcase-card.popular {
-          border-color: #0070f3;
+          border-color: #DFA842;
         }
         .plan-showcase-card.best-value {
           border-color: #f59e0b;
@@ -2892,7 +3039,7 @@ export default function SuperAdminPage() {
           position: absolute;
           top: -12px;
           right: 20px;
-          background: #0070f3;
+          background: #DFA842;
           color: #ffffff;
           font-size: 11px;
           font-weight: 800;
@@ -2911,11 +3058,11 @@ export default function SuperAdminPage() {
           margin-bottom: 12px;
         }
         .plan-showcase-card.indigo .showcase-icon-box {
-          background: rgba(99, 102, 241, 0.15);
+          background: rgba(196, 138, 105, 0.15);
           color: #a5b4fc;
         }
         .plan-showcase-card.cyan .showcase-icon-box {
-          background: rgba(0, 194, 255, 0.15);
+          background: rgba(223, 168, 66, 0.15);
           color: #67e8f9;
         }
         .plan-showcase-card.emerald .showcase-icon-box {
@@ -2955,7 +3102,7 @@ export default function SuperAdminPage() {
         .currency-unit {
           font-size: 16px;
           font-weight: 700;
-          color: var(--accent-cyan, #00c2ff);
+          color: var(--accent-cyan, #DFA842);
         }
         .period-unit {
           font-size: 12px;
@@ -3000,7 +3147,7 @@ export default function SuperAdminPage() {
         }
         .btn-select-for-add {
           width: 100%;
-          background: #0070f3;
+          background: #DFA842;
           color: #ffffff;
           border: none;
           border-radius: 8px;
@@ -3011,7 +3158,7 @@ export default function SuperAdminPage() {
           transition: all 0.2s;
         }
         .btn-select-for-add:hover {
-          background: #0060df;
+          background: #E9B95B;
         }
 
         /* ─── Modals (Matching CCMS Shift / Expense Modals) ─── */
@@ -3051,7 +3198,7 @@ export default function SuperAdminPage() {
         }
         .modal-header-icon {
           font-size: 26px;
-          color: var(--accent-cyan, #00c2ff);
+          color: var(--accent-cyan, #DFA842);
         }
         .modal-header-title h3 {
           margin: 0;
@@ -3102,8 +3249,8 @@ export default function SuperAdminPage() {
           transition: all 0.2s;
         }
         .modal-plan-card.active {
-          border-color: #0070f3;
-          background: rgba(0, 112, 243, 0.12);
+          border-color: #DFA842;
+          background: rgba(223, 168, 66, 0.12);
         }
         .modal-plan-title {
           display: flex;
@@ -3115,7 +3262,7 @@ export default function SuperAdminPage() {
         }
         .modal-plan-price {
           font-size: 11px;
-          color: var(--accent-cyan, #00c2ff);
+          color: var(--accent-cyan, #DFA842);
         }
         .quick-extend-buttons {
           display: flex;
@@ -3134,9 +3281,9 @@ export default function SuperAdminPage() {
           transition: all 0.2s;
         }
         .btn-extend-chip:hover {
-          background: rgba(0, 194, 255, 0.15);
-          border-color: var(--accent-cyan, #00c2ff);
-          color: var(--accent-cyan, #00c2ff);
+          background: rgba(223, 168, 66, 0.15);
+          border-color: var(--accent-cyan, #DFA842);
+          color: var(--accent-cyan, #DFA842);
         }
         .modal-footer-actions {
           display: flex;
@@ -3161,8 +3308,8 @@ export default function SuperAdminPage() {
           display: flex;
           align-items: center;
           gap: 6px;
-          background: #0070f3;
-          color: #ffffff;
+          background: #DFA842;
+          color: #0C0C0E;
           border: none;
           padding: 10px 20px;
           border-radius: 8px;
@@ -3215,8 +3362,8 @@ export default function SuperAdminPage() {
         .spinner-large {
           width: 40px;
           height: 40px;
-          border: 3px solid rgba(0, 194, 255, 0.2);
-          border-top-color: var(--accent-cyan, #00c2ff);
+          border: 3px solid rgba(223, 168, 66, 0.2);
+          border-top-color: var(--accent-cyan, #DFA842);
           border-radius: 50%;
           animation: spin 1s linear infinite;
         }
@@ -3226,6 +3373,71 @@ export default function SuperAdminPage() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(4px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+          .ccms-superadmin-shell {
+            padding: 12px 10px 40px;
+          }
+          .portal-wrapper {
+            gap: 14px;
+          }
+          .ccms-admin-header {
+            padding: 14px;
+            gap: 12px;
+          }
+          .header-controls-side {
+            width: 100%;
+            justify-content: flex-start;
+          }
+          .header-controls-side button {
+            flex: 1 1 auto;
+            justify-content: center;
+          }
+          .key-dock-card {
+            padding: 14px;
+          }
+          .dock-content-row {
+            gap: 12px;
+          }
+          .secret-field-wrapper {
+            max-width: 100%;
+            width: 100%;
+          }
+          .dock-btns-row {
+            width: 100%;
+          }
+          .dock-btns-row button {
+            flex: 1;
+            justify-content: center;
+          }
+          .metrics-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+          }
+          .ccms-stat-box {
+            padding: 14px;
+          }
+          .stat-box-val {
+            font-size: 24px;
+          }
+          .main-tabs-nav {
+            flex-wrap: wrap;
+          }
+          .tab-btn {
+            padding: 10px 10px;
+            font-size: 12.5px;
+          }
+          .tab-content-card {
+            padding: 14px;
+          }
+          .search-box-wrapper {
+            max-width: 100%;
+            width: 100%;
+          }
+          .modal-plans-grid {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
     </div>

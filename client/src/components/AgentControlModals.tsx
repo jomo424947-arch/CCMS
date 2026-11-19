@@ -87,14 +87,14 @@ export function PairDeviceModal({
       await dataService.toggleSimulatedAgent(targetId, true);
       toast(
         isAr
-          ? 'تم ربط وتشغيل محاكي عميل ويندوز المباشر (Live Agent) بنجاح!'
-          : 'Live Simulated Windows Agent connected & locked!',
+          ? 'تم تفعيل وضع التجربة على الجهاز بنجاح!'
+          : 'Demo mode enabled on this PC!',
         'success'
       );
       onPairedOrSimulated();
       onClose();
     } catch (err) {
-      toast(apiErrorMessage(err, 'Could not start simulated agent'), 'error');
+      toast(apiErrorMessage(err, 'Could not start demo mode'), 'error');
     } finally {
       setSimulating(false);
     }
@@ -105,8 +105,8 @@ export function PairDeviceModal({
       open
       title={
         isAr
-          ? `ربط وتثبيت نظام الحماية والتحكم (CCMS Agent)${device ? ` · ${device.name}` : ''}`
-          : `Pair Windows Enforcement Agent${device ? ` · ${device.name}` : ''}`
+          ? `ربط جهاز الكمبيوتر${device ? ` · ${device.name}` : ''}`
+          : `Connect PC${device ? ` · ${device.name}` : ''}`
       }
       onClose={onClose}
       width={560}
@@ -117,13 +117,13 @@ export function PairDeviceModal({
           </Button>
           <Button onClick={() => generateCode(selectedDeviceId || null)} loading={loading}>
             <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>refresh</span>
-            <span>{isAr ? 'توليد كود جديد' : 'Regenerate OTP'}</span>
+            <span>{isAr ? 'توليد كود جديد' : 'New Code'}</span>
           </Button>
         </>
       }
     >
       {loading || !pairingInfo ? (
-        <LoadingSpinner label={isAr ? 'جاري توليد كود الربط المشفر...' : 'Generating cryptographic pairing OTP...'} />
+        <LoadingSpinner label={isAr ? 'جاري توليد كود الربط...' : 'Generating pairing code...'} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Target PC Selector */}
@@ -158,8 +158,8 @@ export function PairDeviceModal({
           {/* 6-Digit OTP Display */}
           <div
             style={{
-              background: 'rgba(0, 194, 255, 0.06)',
-              border: '1px solid rgba(0, 194, 255, 0.3)',
+              background: 'rgba(223, 168, 66, 0.06)',
+              border: '1px solid rgba(223, 168, 66, 0.3)',
               borderRadius: '12px',
               padding: '18px',
               textAlign: 'center',
@@ -168,8 +168,8 @@ export function PairDeviceModal({
               gap: '8px',
             }}
           >
-            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.2px', color: '#00C2FF', fontWeight: 700 }}>
-              {isAr ? 'كود الربط السريع (صالح لمدة 15 دقيقة)' : '6-Digit Pairing OTP (Valid for 15 Minutes)'}
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.2px', color: '#DFA842', fontWeight: 700 }}>
+              {isAr ? 'كود الربط (صالح لمدة 15 دقيقة)' : '6-Digit Pairing Code (Valid 15 Minutes)'}
             </span>
             <div
               style={{
@@ -183,11 +183,11 @@ export function PairDeviceModal({
               {pairingInfo.code}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace' }}>
-              Controller: {pairingInfo.controller_ip} · {pairingInfo.server_public_key_fingerprint}
+              {isAr ? 'عنوان الكاشير:' : 'Server:'} {pairingInfo.controller_ip}
             </div>
           </div>
 
-          {/* One-Click Mass Deployment .bat */}
+          {/* One-Click Mass Deployment */}
           <div
             style={{
               padding: '14px',
@@ -203,21 +203,21 @@ export function PairDeviceModal({
           >
             <div style={{ flex: 1, minWidth: '200px' }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: '#FFFFFF' }}>
-                {isAr ? 'التثبيت الصامت بضغطة واحدة (install-cafe.bat)' : 'One-Click Silent Mass Installer (install-cafe.bat)'}
+                {isAr ? 'ملف الإعداد السريع لأجهزة الصالة' : 'Quick Setup File for All PCs'}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                 {isAr
-                  ? 'ضع الملف بجانب CCMS-Agent-Setup.exe على فلاشة لتثبيت وربط 30 جهاز في دقائق.'
-                  : 'Place next to CCMS-Agent-Setup.exe on a USB drive to silently deploy & pair all PCs.'}
+                  ? 'ضع الملف بجانب برنامج الربط على فلاشة لتثبيت وربط أجهزة الصالة بسرعة.'
+                  : 'Place next to the PC installer on a USB drive to connect all PCs automatically.'}
               </div>
             </div>
             <Button variant="ghost" onClick={handleDownloadBat}>
               <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>download</span>
-              <span>install-cafe.bat</span>
+              <span>{isAr ? 'تحميل ملف الإعداد' : 'Download Setup'}</span>
             </Button>
           </div>
 
-          {/* Live Simulated Windows Agent Trigger for instant testing */}
+          {/* Demo Mode Trigger */}
           <div
             style={{
               padding: '14px',
@@ -233,17 +233,17 @@ export function PairDeviceModal({
           >
             <div style={{ flex: 1, minWidth: '200px' }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: '#10b981' }}>
-                {isAr ? 'محاكي عميل ويندوز المباشر (Live Agent Simulator)' : 'Instant Live Windows Agent Simulator'}
+                {isAr ? 'تجربة التحكم افتراضياً' : 'Try Virtual PC Demo'}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                 {isAr
-                  ? 'فعّل محاكي العميل على هذا الجهاز لتجربة القفل التلقائي والـ CPU/RAM والأوامر المشفرة الآن.'
-                  : 'Activate a live simulated Windows Agent to test lock/unlock enforcement & CPU/RAM telemetry.'}
+                  ? 'فعّل وضع التجربة على هذا الجهاز لاختبار القفل والفتح والرسائل فوراً.'
+                  : 'Enable demo mode on this PC to test locking, unlocking, and screen messages right away.'}
               </div>
             </div>
             <Button onClick={handleStartSimulatedAgent} loading={simulating}>
               <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>bolt</span>
-              <span>{isAr ? 'تفعيل المحاكي الآن' : 'Connect Simulated Agent'}</span>
+              <span>{isAr ? 'تفعيل التجربة' : 'Enable Demo'}</span>
             </Button>
           </div>
         </div>
@@ -375,10 +375,10 @@ export function SendMessageModal({ device, onClose, onSent }: SendMessageModalPr
                 borderRadius: '8px',
                 border:
                   severity === lvl
-                    ? '1.5px solid #00C2FF'
+                    ? '1.5px solid #DFA842'
                     : '1px solid rgba(255,255,255,0.1)',
                 background:
-                  severity === lvl ? 'rgba(0, 194, 255, 0.14)' : 'rgba(255,255,255,0.03)',
+                  severity === lvl ? 'rgba(223, 168, 66, 0.14)' : 'rgba(255,255,255,0.03)',
                 color: '#FFFFFF',
                 fontSize: '12px',
                 fontWeight: 600,
@@ -442,8 +442,8 @@ export function PowerControlModal({
       await dataService.sendSafePowerCommand(device.id, action, handling);
       toast(
         isAr
-          ? `تم إرسال أمر ${action === 'restart' ? 'إعادة التشغيل' : 'إيقاف التشغيل'} المشفر إلى ${device.name}`
-          : `Sent signed ${action.toUpperCase()} command to ${device.name}`,
+          ? `تم إرسال أمر ${action === 'restart' ? 'إعادة التشغيل' : 'إيقاف التشغيل'} إلى ${device.name}`
+          : `Sent ${action} command to ${device.name}`,
         'success'
       );
       onDone();
@@ -505,10 +505,10 @@ export function PowerControlModal({
               borderRadius: '10px',
               border:
                 action === 'restart'
-                  ? '1.5px solid #00C2FF'
+                  ? '1.5px solid #DFA842'
                   : '1px solid rgba(255,255,255,0.08)',
               background:
-                action === 'restart' ? 'rgba(0, 194, 255, 0.12)' : 'rgba(255,255,255,0.02)',
+                action === 'restart' ? 'rgba(223, 168, 66, 0.12)' : 'rgba(255,255,255,0.02)',
               color: '#FFFFFF',
               cursor: 'pointer',
               display: 'flex',
@@ -517,7 +517,7 @@ export function PowerControlModal({
               gap: '6px',
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#00C2FF' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#DFA842' }}>
               restart_alt
             </span>
             <span style={{ fontSize: '13px', fontWeight: 700 }}>
@@ -695,13 +695,13 @@ export function DeviceAuditLogModal({
     try {
       await dataService.unpairAgentDevice(device.id);
       toast(
-        isAr ? 'تم إلغاء ربط العميل وسحب الصلاحيات المشفرة' : 'Agent credential revoked & unpaired',
+        isAr ? 'تم إلغاء ربط الجهاز بنجاح' : 'PC unlinked successfully',
         'success'
       );
       onUpdated();
       onClose();
     } catch (err) {
-      toast(apiErrorMessage(err, 'Failed to unpair device'), 'error');
+      toast(apiErrorMessage(err, 'Failed to unlink device'), 'error');
     } finally {
       setActionLoading(false);
     }
@@ -712,8 +712,8 @@ export function DeviceAuditLogModal({
       open
       title={
         isAr
-          ? `سجل الأمان والأوامر المشفرة (Ed25519) · ${device.name}`
-          : `Agent Security & Signed Command Log · ${device.name}`
+          ? `سجل أوامر الجهاز · ${device.name}`
+          : `Device Activity Log · ${device.name}`
       }
       onClose={onClose}
       width={620}
@@ -737,7 +737,7 @@ export function DeviceAuditLogModal({
                 {device.agent_status !== 'unpaired' && (
                   <Button variant="danger" onClick={handleUnpair} loading={actionLoading}>
                     <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>link_off</span>
-                    <span>{isAr ? 'إلغاء الربط' : 'Unpair Agent'}</span>
+                    <span>{isAr ? 'إلغاء الربط' : 'Unlink PC'}</span>
                   </Button>
                 )}
               </>
@@ -748,46 +748,46 @@ export function DeviceAuditLogModal({
       }
     >
       {loading ? (
-        <LoadingSpinner label={isAr ? 'جاري تحميل السجل الأمني...' : 'Loading security telemetry & audit trail...'} />
+        <LoadingSpinner label={isAr ? 'جاري تحميل السجل...' : 'Loading activity log...'} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '62vh', overflowY: 'auto' }}>
-          {/* Hardware Fingerprint & Identity Summary */}
+          {/* Device Identity Summary */}
           <div
             style={{
               padding: '12px 14px',
               borderRadius: '10px',
-              background: 'rgba(0, 194, 255, 0.05)',
-              border: '1px solid rgba(0, 194, 255, 0.2)',
+              background: 'rgba(223, 168, 66, 0.05)',
+              border: '1px solid rgba(223, 168, 66, 0.2)',
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
               gap: '10px',
               fontSize: '12px',
             }}
           >
             <div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Hardware Fingerprint</div>
-              <div style={{ fontFamily: 'JetBrains Mono, monospace', color: '#00C2FF', fontWeight: 700 }}>
-                {deviceMeta.hardware_fingerprint || 'Not Bound'}
+              <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{isAr ? 'معرّف الجهاز' : 'Device ID'}</div>
+              <div style={{ fontFamily: 'JetBrains Mono, monospace', color: '#DFA842', fontWeight: 700, wordBreak: 'break-all' }}>
+                {deviceMeta.hardware_fingerprint || (isAr ? 'غير مربوط' : 'Not Linked')}
               </div>
             </div>
             <div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>LAN IP & Version</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{isAr ? 'عنوان الشبكة والإصدار' : 'IP & Version'}</div>
               <div style={{ fontFamily: 'JetBrains Mono, monospace', color: '#FFFFFF' }}>
                 {deviceMeta.last_ip || '—'} · v{deviceMeta.agent_version || '1.0'}
               </div>
             </div>
             <div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Last Heartbeat</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{isAr ? 'آخر اتصال' : 'Last Seen'}</div>
               <div style={{ fontFamily: 'JetBrains Mono, monospace', color: '#FFFFFF' }}>
                 {deviceMeta.last_seen_at ? new Date(deviceMeta.last_seen_at).toLocaleTimeString() : '—'}
               </div>
             </div>
           </div>
 
-          {/* Signed Commands History */}
+          {/* Commands History */}
           <div>
             <h5 style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#FFFFFF', fontWeight: 700 }}>
-              {isAr ? 'آخر الأوامر المشفرة المرسلة (Signed Command Envelopes)' : 'Recent Signed Command Envelopes (Ed25519)'}
+              {isAr ? 'آخر الأوامر المرسلة' : 'Recent Commands'}
             </h5>
             {commands.length === 0 ? (
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', padding: '8px 0' }}>
@@ -814,7 +814,7 @@ export function DeviceAuditLogModal({
                         style={{
                           fontFamily: 'JetBrains Mono, monospace',
                           fontWeight: 700,
-                          color: '#00C2FF',
+                          color: '#DFA842',
                         }}
                       >
                         {cmd.command_type}
@@ -848,14 +848,14 @@ export function DeviceAuditLogModal({
             )}
           </div>
 
-          {/* Forensic Security Audit Trail */}
+          {/* Activity Audit Trail */}
           <div>
             <h5 style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#FFFFFF', fontWeight: 700 }}>
-              {isAr ? 'سجل الأحداث والأمان (Forensic Audit Log)' : 'Security & Enforcement Audit Trail'}
+              {isAr ? 'سجل نشاط الجهاز' : 'Device Activity History'}
             </h5>
             {auditLogs.length === 0 ? (
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', padding: '8px 0' }}>
-                {isAr ? 'لا توجد أحداث أمنية مسجلة.' : 'No security audit events recorded yet.'}
+                {isAr ? 'لا توجد أحداث مسجلة بعد.' : 'No activity recorded yet.'}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { DeviceCard } from '../components/DeviceCard';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
@@ -20,16 +21,11 @@ import {
   TransferSessionModal,
 } from '../components/SessionModals';
 import { DeviceFormModal } from '../components/DeviceFormModal';
-import {
-  PairDeviceModal,
-  SendMessageModal,
-  PowerControlModal,
-  DeviceAuditLogModal,
-} from '../components/AgentControlModals';
 import { useAgentLiveStatus } from '../hooks/useAgentLiveStatus';
 import type { Device, DeviceType, Session } from '../types';
 
 export default function DevicesPage() {
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const { t, language } = useLanguage();
@@ -72,28 +68,28 @@ export default function DevicesPage() {
   const [editTarget, setEditTarget] = useState<Session | null>(null);
   const [transferTarget, setTransferTarget] = useState<Session | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Device | null>(null);
+  const [resetDeviceTarget, setResetDeviceTarget] = useState<Device | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [deletingLoading, setDeletingLoading] = useState(false);
 
-  // Agent Control Plane Modals State
-  const [pairTarget, setPairTarget] = useState<Device | null | undefined>(undefined); // undefined = closed, null = bulk
-  const [messageTarget, setMessageTarget] = useState<Device | null | undefined>(undefined); // undefined = closed, null = broadcast
-  const [powerTarget, setPowerTarget] = useState<{ device: Device; session?: Session } | null>(null);
-  const [auditTarget, setAuditTarget] = useState<Device | null>(null);
-  const [bulkLockLoading, setBulkLockLoading] = useState(false);
+  const { telemetryByDevice, wsConnected } = useAgentLiveStatus();
 
-  const { telemetryByDevice, wsConnected } = useAgentLiveStatus((alert) => {
-    toast(
-      language === 'ar'
-        ? `تنبيه أمني (${alert.alert_type}): ${alert.device_name || alert.device_id}`
-        : `Security Alert (${alert.alert_type}): ${alert.device_name || alert.device_id}`,
-      'error'
+  const managedPcs = useMemo(() => {
+    return (data?.devices ?? []).filter(
+      (d) => !excludedDeviceIds.has(d.id) && (d.is_managed || d.type === 'pc')
     );
-  });
+  }, [data?.devices, excludedDeviceIds]);
 
   const hallDevices = useMemo(() => {
     return (data?.devices ?? []).filter(
-      (d) => !excludedDeviceIds.has(d.id) && d.type !== 'table' && !d.name.toLowerCase().includes('billiards') && !d.name.toLowerCase().includes('بلياردو')
+      (d) =>
+        !excludedDeviceIds.has(d.id) &&
+        !d.is_managed &&
+        d.type !== 'pc' &&
+        d.type !== 'table' &&
+        !d.name.toLowerCase().includes('billiards') &&
+        !d.name.toLowerCase().includes('بلياردو')
     );
   }, [data?.devices, excludedDeviceIds]);
 
@@ -106,11 +102,40 @@ export default function DevicesPage() {
   const handleAction = (device: Device) => {
     if (device.status === 'in_use') {
       const session = activeByDevice.get(device.id);
-      if (session) setEndTarget(session);
+      if (session) {
+        setEndTarget(session);
+      } else {
+        setResetDeviceTarget(device);
+      }
     } else if (device.status === 'available') {
       setStartTarget(device);
     } else {
-      toast(`${device.name} is ${device.status} — manage it from Reservations or Settings.`, 'info');
+      toast(
+        language === 'ar'
+          ? `الجهاز ${device.name} حالته (${device.status}) — يمكنك تعديله من الإعدادات.`
+          : `${device.name} is ${device.status} — manage it from Settings.`,
+        'info'
+      );
+    }
+  };
+
+  const handleConfirmResetDevice = async () => {
+    if (!resetDeviceTarget) return;
+    setResetLoading(true);
+    try {
+      await dataService.updateDevice(resetDeviceTarget.id, { status: 'available' });
+      toast(
+        language === 'ar'
+          ? `تمت إعادة تعيين ${resetDeviceTarget.name} إلى متاح`
+          : `Reset ${resetDeviceTarget.name} to available`,
+        'success'
+      );
+      setResetDeviceTarget(null);
+      refetch();
+    } catch (err) {
+      toast(apiErrorMessage(err, 'Failed to reset device status'), 'error');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -159,27 +184,6 @@ export default function DevicesPage() {
     }
   };
 
-  const handleBulkLockIdle = async () => {
-    setBulkLockLoading(true);
-    try {
-      const res = await dataService.sendBulkDeviceCommand('SESSION_END_LOCK', {
-        only_idle: true,
-        reason: 'Cashier bulk-locked all idle terminals',
-      });
-      toast(
-        language === 'ar'
-          ? `تم إرسال أمر القفل المشفر إلى ${res.dispatched_count} جهاز متاح`
-          : `Sent signed lock command to ${res.dispatched_count} idle PCs`,
-        'success'
-      );
-      refetch();
-    } catch (err) {
-      toast(apiErrorMessage(err, 'Failed to bulk lock idle PCs'), 'error');
-    } finally {
-      setBulkLockLoading(false);
-    }
-  };
-
   if (loading || !data) {
     return (
       <Layout title={t('devices')} subtitle={t('loading')}>
@@ -190,7 +194,6 @@ export default function DevicesPage() {
 
   const totalHallDevices = hallDevices.length + billiardsDevices.length;
   const availableHallDevices = [...hallDevices, ...billiardsDevices].filter((d) => d.status === 'available').length;
-  const managedPcs = hallDevices.filter((d) => d.is_managed || d.type === 'pc');
   const onlineAgentsCount = managedPcs.filter((d) => {
     const st = telemetryByDevice[d.id]?.agent_status || d.agent_status;
     return st === 'online_locked' || st === 'online_in_session' || st === 'maintenance';
@@ -240,188 +243,145 @@ export default function DevicesPage() {
         </div>
       }
     >
-      {totalHallDevices === 0 ? (
-        <div className="ccms-card">
-          <EmptyState
-            icon="devices"
-            title={language === 'ar' ? 'لا توجد أجهزة صالة مسجلة' : 'No hall devices yet'}
-            description={language === 'ar' ? 'أضف أول جهاز صالة أو طاولة بلياردو للبدء.' : 'Add your first hall device to get started.'}
-            action={isAdmin ? <Button onClick={() => setCreating(true)}>{language === 'ar' ? 'إضافة جهاز' : 'Add Device'}</Button> : undefined}
-          />
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-          {/* CCMS Device Control & Enforcement Bar */}
-          {managedPcs.length > 0 && (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Dedicated PC Control Link Banner */}
+        <div
+          style={{
+            padding: '14px 18px',
+            borderRadius: '14px',
+            background: 'linear-gradient(135deg, rgba(223, 168, 66, 0.09) 0%, rgba(10, 14, 26, 0.95) 100%)',
+            border: '1px solid rgba(223, 168, 66, 0.28)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
-                padding: '14px 18px',
-                borderRadius: '14px',
-                background: 'linear-gradient(135deg, rgba(0, 194, 255, 0.08) 0%, rgba(10, 14, 26, 0.95) 100%)',
-                border: '1px solid rgba(0, 194, 255, 0.25)',
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                background: 'rgba(223, 168, 66, 0.14)',
+                border: '1px solid rgba(223, 168, 66, 0.35)',
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '12px',
+                justifyContent: 'center',
+                color: '#DFA842',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '21px' }}>desktop_windows</span>
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {language === 'ar'
+                    ? 'إدارة أجهزة الكمبيوتر'
+                    : 'PC Control Center'}
+                </span>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    background: wsConnected ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.14)',
+                    color: wsConnected ? '#10b981' : '#f59e0b',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: wsConnected ? '#10b981' : '#f59e0b',
+                    }}
+                  />
+                  {wsConnected
+                    ? language === 'ar' ? 'متصل مباشر' : 'Live'
+                    : language === 'ar' ? 'تحديث تلقائي' : 'Syncing'}
+                </span>
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                {language === 'ar'
+                  ? `${managedPcs.length} جهاز كمبيوتر · ${onlineAgentsCount} متصل (قفل الشاشة، الرسائل، الصيانة، والطاقة)`
+                  : `${managedPcs.length} PCs · ${onlineAgentsCount} online (Screen lock, messages, maintenance & power)`}
+              </div>
+            </div>
+          </div>
+
+          <Button
+            onClick={() => navigate('/pcs')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>open_in_new</span>
+            <span>{language === 'ar' ? 'فتح إدارة الكمبيوتر' : 'Open PC Control'}</span>
+          </Button>
+        </div>
+
+        {totalHallDevices === 0 ? (
+          <div className="ccms-card">
+            <EmptyState
+              icon="sports_esports"
+              title={language === 'ar' ? 'لا توجد أجهزة كونسول أو بلياردو بالصالة' : 'No console or billiards stations yet'}
+              description={
+                language === 'ar'
+                  ? 'أجهزة الكمبيوتر (PC) لها صفحتها الخاصة أعلى الشاشة. أضف أجهزة PlayStation أو VR أو طاولات بلياردو هنا.'
+                  : 'PCs are managed on the dedicated PC Control page above. Add PlayStation, VR, or Billiards stations here.'
+              }
+              action={isAdmin ? <Button onClick={() => setCreating(true)}>{language === 'ar' ? 'إضافة جهاز' : 'Add Device'}</Button> : undefined}
+            />
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+            {/* Section 1: أجهزة الصالة (PlayStation / Consoles / VR) */}
+            {hallDevices.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
+                  <span style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', fontFamily: 'Plus Jakarta Sans, Cairo, sans-serif' }}>
+                    {language === 'ar' ? 'أجهزة الصالة (كونسول / VR)' : 'Hall Stations (Console / VR)'}
+                  </span>
+                  <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#B67B1B' }}>
+                    sports_esports
+                  </span>
+                </div>
+
                 <div
                   style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '10px',
-                    background: 'rgba(0, 194, 255, 0.14)',
-                    border: '1px solid rgba(0, 194, 255, 0.35)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#00C2FF',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))',
+                    gap: '20px',
                   }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>shield_lock</span>
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#FFFFFF' }}>
-                      {language === 'ar'
-                        ? 'محرك التحكم والحماية للأجهزة (CCMS Agent Control Plane)'
-                        : 'CCMS Device Control & Enforcement Engine'}
-                    </span>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '2px 8px',
-                        borderRadius: '999px',
-                        fontSize: '10.5px',
-                        fontFamily: 'JetBrains Mono, monospace',
-                        fontWeight: 700,
-                        background: wsConnected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                        color: wsConnected ? '#10b981' : '#f59e0b',
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: '6px',
-                          height: '6px',
-                          borderRadius: '50%',
-                          background: wsConnected ? '#10b981' : '#f59e0b',
-                        }}
-                      />
-                      {wsConnected ? 'WS LIVE' : 'SYNCING'}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', fontFamily: 'JetBrains Mono, Cairo, sans-serif' }}>
-                    {language === 'ar'
-                      ? `${onlineAgentsCount} من ${managedPcs.length} كمبيوتر متصل بنظام القفل التلقائي (Ed25519 Signed)`
-                      : `${onlineAgentsCount} / ${managedPcs.length} PCs connected with active Ed25519 screen lock enforcement`}
-                  </div>
+                  {hallDevices.map((device, i) => (
+                    <DeviceCard
+                      key={device.id}
+                      device={device}
+                      index={i}
+                      activeSession={activeByDevice.get(device.id)}
+                      onAction={handleAction}
+                      onEditSession={(session) => setEditTarget(session)}
+                      onTransferSession={(session) => setTransferTarget(session)}
+                      onExtendSession={handleExtendSession}
+                      onPauseSession={handlePauseSession}
+                      onResumeSession={handleResumeSession}
+                      onDeleteDevice={isAdmin ? (dev) => setDeleteTarget(dev) : undefined}
+                    />
+                  ))}
                 </div>
               </div>
-
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {isAdmin && (
-                  <button
-                    type="button"
-                    className="ccms-btn ccms-btn-ghost"
-                    onClick={() => setPairTarget(null)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      borderColor: 'rgba(0, 194, 255, 0.4)',
-                      color: '#00C2FF',
-                      fontSize: '12px',
-                    }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>qr_code_2</span>
-                    <span>{language === 'ar' ? 'ربط جهاز / تحميل التثبيت' : 'Pair PC / Mass Deploy'}</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="ccms-btn ccms-btn-ghost"
-                  onClick={() => setMessageTarget(null)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '12px',
-                  }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>campaign</span>
-                  <span>{language === 'ar' ? 'رسالة جماعية للشاشات' : 'Broadcast Message'}</span>
-                </button>
-                <button
-                  type="button"
-                  className="ccms-btn ccms-btn-ghost"
-                  onClick={handleBulkLockIdle}
-                  disabled={bulkLockLoading}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '12px',
-                  }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>lock</span>
-                  <span>{language === 'ar' ? 'قفل الأجهزة المتاحة' : 'Lock Idle PCs'}</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Section 1: أجهزة الصالة (PlayStation / Consoles / PC) */}
-          {hallDevices.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
-                <span style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', fontFamily: 'Space Grotesk, Cairo, sans-serif' }}>
-                  {language === 'ar' ? 'أجهزة الصالة' : 'Hall Devices'}
-                </span>
-                <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#0066FF' }}>
-                  sports_esports
-                </span>
-              </div>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))',
-                  gap: '20px',
-                }}
-              >
-                {hallDevices.map((device, i) => (
-                  <DeviceCard
-                    key={device.id}
-                    device={device}
-                    index={i}
-                    activeSession={activeByDevice.get(device.id)}
-                    liveTelemetry={telemetryByDevice[device.id]}
-                    onAction={handleAction}
-                    onEditSession={(session) => setEditTarget(session)}
-                    onTransferSession={(session) => setTransferTarget(session)}
-                    onExtendSession={handleExtendSession}
-                    onPauseSession={handlePauseSession}
-                    onResumeSession={handleResumeSession}
-                    onDeleteDevice={isAdmin ? (dev) => setDeleteTarget(dev) : undefined}
-                    onPairAgent={isAdmin ? (dev) => setPairTarget(dev) : undefined}
-                    onSendMessage={(dev) => setMessageTarget(dev)}
-                    onPowerControl={(dev, sess) => setPowerTarget({ device: dev, session: sess })}
-                    onOpenAgentLogs={(dev) => setAuditTarget(dev)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+            )}
 
           {/* Section 2: أجهزة البلياردو (Billiards & Tables) */}
           {billiardsDevices.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px' }}>
-                <span style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', fontFamily: 'Space Grotesk, Cairo, sans-serif' }}>
+                <span style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', fontFamily: 'Plus Jakarta Sans, Cairo, sans-serif' }}>
                   {language === 'ar' ? 'أجهزة البلياردو' : 'Billiards Devices'}
                 </span>
                 <span
@@ -466,9 +426,10 @@ export default function DevicesPage() {
                 ))}
               </div>
             </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Start session modal */}
       {startTarget && (
@@ -522,22 +483,32 @@ export default function DevicesPage() {
         />
       )}
 
-      {/* Delete device modal */}
       {/* Create device modal */}
       {creating && (
         <DeviceFormModal
           title={language === 'ar' ? 'تسجيل جهاز جديد' : 'Register New Device'}
           initial={null}
+          defaultType="console"
           existingDevices={data.devices}
           onClose={() => setCreating(false)}
           onDone={async (patch) => {
             try {
-              await dataService.createDevice(patch as { name: string; type: DeviceType; hourly_rate: number; specs?: Record<string, string> });
-              toast(language === 'ar' ? 'تم إضافة الجهاز بنجاح' : 'Device added successfully', 'success');
+              const created = await dataService.createDevice(patch as { name: string; type: DeviceType; hourly_rate: number; specs?: Record<string, string> });
+              if (created.type === 'pc') {
+                toast(
+                  language === 'ar'
+                    ? 'تم إضافة جهاز الكمبيوتر — يمكنك التحكم به من صفحة أجهزة الكمبيوتر (PC)'
+                    : 'PC added — manage it from the dedicated PC Control page',
+                  'success'
+                );
+              } else {
+                toast(language === 'ar' ? 'تم إضافة الجهاز بنجاح' : 'Device added successfully', 'success');
+              }
               refetch();
               setCreating(false);
             } catch (err) {
               toast(apiErrorMessage(err, 'Could not create device'), 'error');
+              throw err;
             }
           }}
         />
@@ -565,41 +536,26 @@ export default function DevicesPage() {
         </Modal>
       )}
 
-      {/* Agent Control Plane Modals */}
-      {pairTarget !== undefined && (
-        <PairDeviceModal
-          device={pairTarget}
-          allDevices={data.devices}
-          onClose={() => setPairTarget(undefined)}
-          onPairedOrSimulated={refetch}
-        />
-      )}
-
-      {messageTarget !== undefined && (
-        <SendMessageModal
-          device={messageTarget}
-          onClose={() => setMessageTarget(undefined)}
-          onSent={refetch}
-        />
-      )}
-
-      {powerTarget && (
-        <PowerControlModal
-          device={powerTarget.device}
-          activeSession={powerTarget.session}
-          onClose={() => setPowerTarget(null)}
-          onEndSessionFirst={(sess) => setEndTarget(sess)}
-          onDone={refetch}
-        />
-      )}
-
-      {auditTarget && (
-        <DeviceAuditLogModal
-          device={auditTarget}
-          isAdmin={isAdmin}
-          onClose={() => setAuditTarget(null)}
-          onUpdated={refetch}
-        />
+      {resetDeviceTarget && (
+        <Modal
+          open
+          title={language === 'ar' ? `إعادة تعيين حالة الجهاز · ${resetDeviceTarget.name}` : `Reset Device Status · ${resetDeviceTarget.name}`}
+          onClose={() => setResetDeviceTarget(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setResetDeviceTarget(null)} disabled={resetLoading}>{t('cancel')}</Button>
+              <Button loading={resetLoading} onClick={handleConfirmResetDevice}>
+                {language === 'ar' ? 'تحويل إلى متاح' : 'Reset to Available'}
+              </Button>
+            </>
+          }
+        >
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
+            {language === 'ar'
+              ? `الجهاز (${resetDeviceTarget.name}) مسجل كـ "مشغول" ولكن لا توجد جلسة نشطة مرتبطة به حالياً. هل تريد إعادة تعيين حالته إلى "متاح"؟`
+              : `Device (${resetDeviceTarget.name}) is marked "In Use" but has no active session. Reset status to "Available"?`}
+          </p>
+        </Modal>
       )}
     </Layout>
   );

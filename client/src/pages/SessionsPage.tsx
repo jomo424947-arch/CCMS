@@ -6,6 +6,7 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
 import { useAsync } from '../hooks/useAsync';
 import { usePolling } from '../hooks/usePolling';
 import { useNow } from '../hooks/useNow';
@@ -15,13 +16,14 @@ import { dataService } from '../services';
 import { apiErrorMessage } from '../services/http';
 import { formatElapsed, formatDuration, formatCurrency, formatDateTime } from '../utils/format';
 import {
+  StartSessionModal,
   EndSessionModal,
   EditSessionModal,
   AuditLogModal,
   TransferSessionModal,
 } from '../components/SessionModals';
 import { AddCafeModal } from '../components/AddCafeModal';
-import type { Session } from '../types';
+import type { Device, Session } from '../types';
 
 type Tab = 'active' | 'history';
 
@@ -31,21 +33,27 @@ export default function SessionsPage() {
   const { toast } = useToast();
   const { t, language, isRtl } = useLanguage();
 
+  const [showDevicePicker, setShowDevicePicker] = useState(false);
+  const [startTarget, setStartTarget] = useState<Device | null>(null);
   const [endTarget, setEndTarget] = useState<Session | null>(null);
   const [editTarget, setEditTarget] = useState<Session | null>(null);
   const [transferTarget, setTransferTarget] = useState<Session | null>(null);
   const [auditTarget, setAuditTarget] = useState<Session | null>(null);
   const [cafeTarget, setCafeTarget] = useState<Session | null>(null);
 
-  const { data, loading, refetch } = useAsync(
-    () => dataService.listSessions(),
-    []
-  );
+  const { data, loading, refetch } = useAsync(async () => {
+    const [sessions, devices] = await Promise.all([
+      dataService.listSessions(),
+      dataService.listDevices().catch(() => []),
+    ]);
+    return { sessions, devices };
+  }, []);
 
   // Auto-poll every 15 seconds for cross-instance sync (Desktop ↔ Web ↔ Mobile)
   usePolling(refetch, 15000);
 
-  const sessions = data ?? [];
+  const sessions = data?.sessions ?? [];
+  const availableDevices = (data?.devices ?? []).filter((d) => d.status === 'available');
 
   const activeSessions = sessions.filter((s) => s.status === 'active');
   const historySessions = sessions.filter((s) => s.status === 'ended');
@@ -86,14 +94,23 @@ export default function SessionsPage() {
       title={t('active_sessions_title')}
       subtitle={language === 'ar' ? 'متابعة الجلسات النشطة حالياً ومراجعة سجل الجلسات السابقة' : 'Track active sessions and review history'}
       actions={
-        <button
-          className="ccms-btn ccms-btn-ghost"
-          onClick={refetch}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>sync</span>
-          {language === 'ar' ? 'تحديث' : 'Refresh'}
-        </button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <Button
+            onClick={() => setShowDevicePicker(true)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>play_arrow</span>
+            <span>{language === 'ar' ? 'بدء جلسة جديدة' : 'Start Session'}</span>
+          </Button>
+          <button
+            className="ccms-btn ccms-btn-ghost"
+            onClick={refetch}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>sync</span>
+            {language === 'ar' ? 'تحديث' : 'Refresh'}
+          </button>
+        </div>
       }
     >
       {/* Tabs */}
@@ -119,8 +136,15 @@ export default function SessionsPage() {
             }
             description={
               tab === 'active'
-                ? (language === 'ar' ? 'ابدأ جلسة لعب من صفحة الأجهزة لبدء المتابعة.' : 'Start a session from the Devices page to begin tracking.')
+                ? (language === 'ar' ? 'ابدأ جلسة لعب مباشرة باختيار أحد الأجهزة المتاحة.' : 'Start a gaming session directly by choosing an available device.')
                 : (language === 'ar' ? 'الجلسات المنتهية ستظهر هنا مع تكلفتها ومدتها.' : 'Ended sessions will appear here with their cost and duration.')
+            }
+            action={
+              tab === 'active' ? (
+                <Button onClick={() => setShowDevicePicker(true)}>
+                  {language === 'ar' ? 'بدء جلسة جديدة' : 'Start New Session'}
+                </Button>
+              ) : undefined
             }
           />
         </div>
@@ -318,7 +342,7 @@ export default function SessionsPage() {
                             fontSize: '11px',
                             minHeight: '32px',
                             color: 'var(--accent-cyan)',
-                            borderColor: 'rgba(0, 194, 255, 0.4)',
+                            borderColor: 'rgba(223, 168, 66, 0.4)',
                             fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit',
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -500,6 +524,79 @@ export default function SessionsPage() {
           session={cafeTarget}
           onClose={() => setCafeTarget(null)}
           onDone={refetch}
+        />
+      )}
+
+      {/* Quick Device Picker Modal */}
+      {showDevicePicker && (
+        <Modal
+          open
+          title={language === 'ar' ? 'اختر الجهاز لبدء الجلسة' : 'Select Device to Start Session'}
+          onClose={() => setShowDevicePicker(false)}
+          footer={
+            <Button variant="ghost" onClick={() => setShowDevicePicker(false)}>
+              {t('cancel')}
+            </Button>
+          }
+        >
+          {availableDevices.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0, textAlign: 'center', padding: '16px 0' }}>
+              {language === 'ar'
+                ? 'لا توجد أجهزة متاحة حالياً. جميع الأجهزة مشغولة أو لم يتم تسجيل أجهزة بعد.'
+                : 'No available devices right now. All devices are currently in use or none have been added yet.'}
+            </p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '10px', maxHeight: '360px', overflowY: 'auto' }}>
+              {availableDevices.map((dev) => (
+                <button
+                  key={dev.id}
+                  type="button"
+                  onClick={() => {
+                    setShowDevicePicker(false);
+                    setStartTarget(dev);
+                  }}
+                  style={{
+                    padding: '12px',
+                    borderRadius: '10px',
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border-default)',
+                    cursor: 'pointer',
+                    textAlign: isRtl ? 'right' : 'left',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    transition: 'border-color 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent-cyan)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-default)')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-cyan)' }}>
+                      {dev.type === 'pc' ? 'desktop_windows' : dev.type === 'console' ? 'sports_esports' : dev.type === 'vr' ? 'vrpano' : 'table_restaurant'}
+                    </span>
+                    <span style={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--accent-green)', fontWeight: 700 }}>
+                      {formatCurrency(dev.hourly_rate)}/hr
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{dev.name}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{dev.type}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </Modal>
+      )}
+
+      {/* Start Session Modal */}
+      {startTarget && (
+        <StartSessionModal
+          device={startTarget}
+          onClose={() => setStartTarget(null)}
+          onDone={() => {
+            setStartTarget(null);
+            toast(language === 'ar' ? 'تم بدء الجلسة بنجاح' : 'Session started', 'success');
+            refetch();
+          }}
         />
       )}
     </Layout>

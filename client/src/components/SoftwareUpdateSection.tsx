@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { useLanguage } from '../context/LanguageContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { dataService } from '../services';
 import { useToast } from '../context/ToastContext';
 
@@ -25,6 +26,7 @@ interface CloudSyncData {
 export function SoftwareUpdateSection() {
   const { language } = useLanguage();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const isAr = language === 'ar';
 
   const [version, setVersion] = useState<string>('2.0.0');
@@ -70,8 +72,8 @@ export function SoftwareUpdateSection() {
       setStatusType('success');
       setStatusMessage(
         isAr
-          ? 'تم التحقق بنجاح: أنت تعمل على أحدث إصدار مستقر (CCMS v2.0.0 CyberShield Control Plane) مع اتصال مباشر بقاعدة البيانات السحابية.'
-          : 'Up to date: Running latest stable release (CCMS v2.0.0 CyberShield Control Plane) with active Supabase Cloud Sync.'
+          ? `أنت تعمل على أحدث إصدار من النظام (v${version}) والنسخ الاحتياطي يعمل بشكل طبيعي.`
+          : `Up to date: You are running the latest version (v${version}) with backup active.`
       );
       return;
     }
@@ -107,12 +109,12 @@ export function SoftwareUpdateSection() {
       setCloudStatus(updated);
       toast(
         isAr
-          ? 'تمت المزامنة الفورية مع قاعدة بيانات Supabase بنجاح!'
-          : 'Successfully synchronized local SQLite with Supabase Cloud!',
+          ? 'تمت مزامنة وحفظ البيانات بنجاح!'
+          : 'Cloud backup synchronized successfully!',
         'success'
       );
     } catch {
-      toast(isAr ? 'حدث خطأ أثناء المزامنة مع السحابة' : 'Failed to synchronize with cloud database', 'error');
+      toast(isAr ? 'تعذر إتمام المزامنة حالياً' : 'Could not synchronize right now', 'error');
     } finally {
       setSyncingCloud(false);
     }
@@ -133,20 +135,20 @@ export function SoftwareUpdateSection() {
       URL.revokeObjectURL(url);
       toast(
         isAr
-          ? `تم تنزيل ملف التثبيت الجماعي (install-cafe.bat) برمز ربط نشط (${pairInfo.code})`
-          : `Downloaded mass deployment script (install-cafe.bat) with active OTP (${pairInfo.code})`,
+          ? `تم تحميل ملف إعداد الأجهزة بنجاح (كود الربط: ${pairInfo.code})`
+          : `Downloaded PC setup file with pairing code (${pairInfo.code})`,
         'success'
       );
     } catch {
-      toast(isAr ? 'تعذر توليد ملف التثبيت الجماعي' : 'Could not generate installer script', 'error');
+      toast(isAr ? 'تعذر تجهيز ملف الإعداد' : 'Could not prepare setup file', 'error');
     } finally {
       setDownloadingBat(false);
     }
   };
 
   return (
-    <Card style={{ marginBottom: '24px', overflow: 'hidden', border: '1px solid rgba(0, 229, 255, 0.22)' }}>
-      <div style={{ padding: '22px 24px' }}>
+    <Card style={{ marginBottom: '20px', overflow: 'hidden', border: '1px solid rgba(223, 168, 66, 0.22)' }}>
+      <div style={{ padding: isMobile ? '16px' : '22px 24px' }}>
         {/* Top Row: Version & Update Check */}
         <div
           style={{
@@ -154,82 +156,87 @@ export function SoftwareUpdateSection() {
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '16px',
-            paddingBottom: '18px',
+            gap: '14px',
+            paddingBottom: '16px',
             borderBottom: '1px solid var(--border-default)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
             <div
               style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.18), rgba(99, 102, 241, 0.18))',
-                border: '1px solid rgba(0, 229, 255, 0.35)',
+                width: isMobile ? '40px' : '44px',
+                height: isMobile ? '40px' : '44px',
+                borderRadius: '11px',
+                background: 'linear-gradient(135deg, rgba(223, 168, 66, 0.16), rgba(196, 138, 105, 0.16))',
+                border: '1px solid rgba(223, 168, 66, 0.32)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'var(--accent-cyan)',
+                flexShrink: 0,
               }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
                 system_update_alt
               </span>
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                  {isAr ? 'مركز التحديثات والمزامنة السحابية (CCMS v2.0)' : 'Software Update & Cloud Sync Center (CCMS v2.0)'}
+                <h2 style={{ fontSize: isMobile ? '15px' : '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  {isAr ? 'التحديثات والنسخ الاحتياطي' : 'Updates & Backup'}
                 </h2>
                 <span
                   style={{
                     fontSize: '11px',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     fontFamily: 'JetBrains Mono, monospace',
                     padding: '2px 8px',
-                    borderRadius: '999px',
-                    background: 'rgba(16, 185, 129, 0.15)',
+                    borderRadius: '6px',
+                    background: 'rgba(16, 185, 129, 0.14)',
                     color: 'var(--accent-green)',
-                    border: '1px solid rgba(16, 185, 129, 0.35)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
                   }}
                 >
-                  v{version} STABLE
+                  v{version}
                 </span>
               </div>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
                 {isAr
-                  ? `الإصدار المثبت: v${version} ${isElectron ? '(تطبيق سطح المكتب + System Tray)' : '(خادم التحكم المحلي + المزامنة السحابية)'}`
-                  : `Installed build: v${version} ${isElectron ? '(Desktop + System Tray)' : '(LAN Control Server + Cloud Sync)'}`}
+                  ? isElectron
+                    ? 'نسخة سطح المكتب المفعّلة مع الحفظ التلقائي'
+                    : 'النظام يعمل بكفاءة مع الحفظ التلقائي للبيانات'
+                  : isElectron
+                  ? 'Desktop edition active with automatic backup'
+                  : 'System running smoothly with automatic data backup'}
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
             <Button
               variant="ghost"
               onClick={handleDownloadAgentInstallerScript}
               disabled={downloadingBat}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: isMobile ? '100%' : 'auto' }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                terminal
+              <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>
+                download
               </span>
               {downloadingBat
                 ? isAr
                   ? 'جاري التجهيز...'
                   : 'Preparing...'
                 : isAr
-                ? 'تنزيل مثبت أجهزة الصالة (install-cafe.bat)'
-                : 'Download PC Agent Script (install-cafe.bat)'}
+                ? 'تحميل ملف إعداد أجهزة الكمبيوتر'
+                : 'Download PC Setup File'}
             </Button>
 
             <Button
               onClick={handleCheckUpdates}
               disabled={checking}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: isMobile ? '100%' : 'auto' }}
             >
-              <span className={`material-symbols-outlined ${checking ? 'animate-spin' : ''}`} style={{ fontSize: '18px' }}>
+              <span className={`material-symbols-outlined ${checking ? 'animate-spin' : ''}`} style={{ fontSize: '17px' }}>
                 sync
               </span>
               {checking
@@ -243,59 +250,59 @@ export function SoftwareUpdateSection() {
           </div>
         </div>
 
-        {/* Bottom Row: Live Supabase Cloud Sync Status & Metrics */}
+        {/* Bottom Row: Backup Status */}
         <div
           style={{
-            marginTop: '18px',
+            marginTop: '16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '16px',
-            padding: '14px 18px',
+            gap: '14px',
+            padding: isMobile ? '12px 14px' : '14px 18px',
             borderRadius: '12px',
             background: 'var(--bg-elevated)',
             border: '1px solid var(--border-default)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
             <span
               className="material-symbols-outlined"
               style={{
-                fontSize: '22px',
+                fontSize: '20px',
                 color: cloudStatus?.cloud_connected ? 'var(--accent-green)' : 'var(--accent-yellow)',
+                flexShrink: 0,
               }}
             >
               {cloudStatus?.cloud_connected ? 'cloud_done' : 'cloud_sync'}
             </span>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {isAr ? 'قاعدة البيانات السحابية (Supabase PostgreSQL)' : 'Supabase Cloud Database'}
+                  {isAr ? 'النسخ الاحتياطي السحابي' : 'Cloud Backup'}
                 </span>
                 <span
                   style={{
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: '11px',
+                    fontWeight: 700,
                     padding: '2px 8px',
-                    borderRadius: '999px',
+                    borderRadius: '6px',
                     background: cloudStatus?.cloud_connected ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.14)',
                     color: cloudStatus?.cloud_connected ? 'var(--accent-green)' : 'var(--accent-yellow)',
-                    border: `1px solid ${cloudStatus?.cloud_connected ? 'rgba(16, 185, 129, 0.35)' : 'rgba(245, 158, 11, 0.35)'}`,
+                    border: `1px solid ${cloudStatus?.cloud_connected ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
                   }}
                 >
                   {!cloudStatus
                     ? isAr
-                      ? 'جاري الاتصال بالسحابة...'
-                      : 'CONNECTING TO CLOUD...'
+                      ? 'جاري التحقق...'
+                      : 'Checking...'
                     : cloudStatus.cloud_connected
                     ? isAr
-                      ? 'متصل ومستقر · ONLINE'
-                      : 'CONNECTED · ONLINE'
+                      ? 'متصل ومحفوظ'
+                      : 'Connected & Saved'
                     : isAr
-                    ? 'وضع محلي مؤقت · OFFLINE-FIRST'
-                    : 'LOCAL SQLITE · OFFLINE-FIRST'}
+                    ? 'حفظ محلي تلقائي'
+                    : 'Local Mode'}
                 </span>
               </div>
               <div
@@ -303,27 +310,25 @@ export function SoftwareUpdateSection() {
                   fontSize: '12px',
                   color: 'var(--text-secondary)',
                   marginTop: '4px',
-                  fontFamily: 'JetBrains Mono, monospace',
                   display: 'flex',
                   gap: '14px',
                   flexWrap: 'wrap',
                 }}
               >
                 <span>
-                  {isAr ? 'الأجهزة بالسحابة:' : 'Cloud Devices:'} <strong>{cloudStatus?.cloud_counts.devices ?? 0}</strong>
+                  {isAr ? 'الأجهزة المحفوظة:' : 'Saved Devices:'}{' '}
+                  <strong style={{ fontFamily: 'JetBrains Mono, monospace' }}>{cloudStatus?.cloud_counts.devices ?? 0}</strong>
                 </span>
                 <span>
-                  {isAr ? 'الجلسات:' : 'Sessions:'} <strong>{cloudStatus?.cloud_counts.sessions ?? 0}</strong>
+                  {isAr ? 'الجلسات:' : 'Sessions:'}{' '}
+                  <strong style={{ fontFamily: 'JetBrains Mono, monospace' }}>{cloudStatus?.cloud_counts.sessions ?? 0}</strong>
                 </span>
-                <span>
-                  {isAr ? 'الأوامر الموقعة:' : 'Signed Cmds:'} <strong>{cloudStatus?.cloud_counts.commands ?? 0}</strong>
-                </span>
-                <span>
-                  {isAr ? 'سجل الأمان:' : 'Audit Logs:'} <strong>{cloudStatus?.cloud_counts.audit_logs ?? 0}</strong>
-                </span>
-                <span>
-                  {isAr ? 'قيد الانتظار:' : 'Pending Queue:'} <strong>{cloudStatus?.pending_sync_items ?? 0}</strong>
-                </span>
+                {(cloudStatus?.pending_sync_items ?? 0) > 0 && (
+                  <span>
+                    {isAr ? 'بانتظار الحفظ:' : 'Pending:'}{' '}
+                    <strong style={{ fontFamily: 'JetBrains Mono, monospace' }}>{cloudStatus?.pending_sync_items}</strong>
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -332,18 +337,18 @@ export function SoftwareUpdateSection() {
             variant="ghost"
             onClick={handleSyncCloudNow}
             disabled={syncingCloud}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: isMobile ? '100%' : 'auto' }}
           >
             <span className={`material-symbols-outlined ${syncingCloud ? 'animate-spin' : ''}`} style={{ fontSize: '16px' }}>
               cloud_upload
             </span>
             {syncingCloud
               ? isAr
-                ? 'جاري المزامنة...'
+                ? 'جاري الحفظ...'
                 : 'Syncing...'
               : isAr
-              ? 'مزامنة فورية مع السحابة'
-              : 'Sync Cloud Now'}
+              ? 'نسخ احتياطي الآن'
+              : 'Backup Now'}
           </Button>
         </div>
 
@@ -362,7 +367,7 @@ export function SoftwareUpdateSection() {
                   ? 'rgba(16, 185, 129, 0.12)'
                   : statusType === 'error'
                   ? 'rgba(239, 68, 68, 0.12)'
-                  : 'rgba(0, 229, 255, 0.12)',
+                  : 'rgba(223, 168, 66, 0.12)',
               color:
                 statusType === 'success'
                   ? 'var(--accent-green)'
@@ -374,7 +379,7 @@ export function SoftwareUpdateSection() {
                   ? 'rgba(16, 185, 129, 0.3)'
                   : statusType === 'error'
                   ? 'rgba(239, 68, 68, 0.3)'
-                  : 'rgba(0, 229, 255, 0.3)'
+                  : 'rgba(223, 168, 66, 0.3)'
               }`,
             }}
           >

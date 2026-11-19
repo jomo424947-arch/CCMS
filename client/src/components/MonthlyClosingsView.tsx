@@ -433,7 +433,7 @@ export function MonthlyClosingsView() {
                   </h3>
                   <div style={{ display: 'flex', gap: '14px', fontSize: '13px' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: 'var(--accent-cyan, #00C2FF)' }} />
+                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: 'var(--accent-cyan, #DFA842)' }} />
                       <span style={{ fontWeight: 600 }}>{language === 'ar' ? 'إيرادات' : 'Revenue'}</span>
                     </span>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -478,7 +478,7 @@ export function MonthlyClosingsView() {
                             style={{
                               width: '45%',
                               height: `${revHeight}px`,
-                              background: row.total_revenue > 0 ? 'var(--accent-cyan, #00C2FF)' : 'rgba(255, 255, 255, 0.06)',
+                              background: row.total_revenue > 0 ? 'var(--accent-cyan, #DFA842)' : 'rgba(255, 255, 255, 0.06)',
                               borderRadius: '2px 2px 0 0',
                             }}
                           />
@@ -1003,7 +1003,7 @@ export function MonthlyClosingsView() {
                         setActiveTab('overview');
                       }}
                       style={{
-                        background: isCurrentSelected ? 'rgba(0, 194, 255, 0.08)' : 'var(--bg-base)',
+                        background: isCurrentSelected ? 'rgba(223, 168, 66, 0.08)' : 'var(--bg-base)',
                         border: isCurrentSelected ? '1px solid var(--accent-cyan)' : '1px solid var(--border-default)',
                         borderRadius: '10px',
                         padding: '16px',
@@ -1021,7 +1021,7 @@ export function MonthlyClosingsView() {
                               fontSize: '11px',
                               fontWeight: 600,
                               color: 'var(--accent-cyan)',
-                              background: 'rgba(0, 229, 255, 0.12)',
+                              background: 'rgba(223, 168, 66, 0.12)',
                               padding: '2px 8px',
                               borderRadius: '4px',
                             }}

@@ -86,8 +86,8 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
 
   const mobileMainItems = [
     { to: '/dashboard', label: t('dashboard'), icon: 'dashboard' },
+    { to: '/pcs', label: language === 'ar' ? 'أجهزة PC' : 'PCs', icon: 'desktop_windows' },
     { to: '/rooms', label: t('rooms'), icon: 'meeting_room' },
-    { to: '/devices', label: t('devices'), icon: 'devices' },
     { to: '/sessions', label: t('sessions'), icon: 'p2p' },
   ];
 
@@ -124,7 +124,7 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
             boxShadow: 'var(--shadow-card)',
           }}
         >
-          {/* Left panel: Active shift badge + Cloud DB status */}
+          {/* Left panel: Active shift badge */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {effectiveShift ? (
               <button
@@ -133,9 +133,9 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  background: 'rgba(16, 185, 129, 0.12)',
-                  border: '1px solid rgba(16, 185, 129, 0.35)',
-                  borderRadius: '20px',
+                  background: 'rgba(34, 197, 94, 0.1)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  borderRadius: '10px',
                   padding: '6px 14px',
                   color: 'var(--accent-green)',
                   fontSize: '12px',
@@ -147,286 +147,16 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
               >
                 <span
                   style={{
-                    width: '8px',
-                    height: '8px',
+                    width: '7px',
+                    height: '7px',
                     borderRadius: '50%',
                     background: 'var(--accent-green)',
-                    animation: 'pulse 1.5s infinite',
                   }}
                 />
-                <span>{language === 'ar' ? 'الوردية نشطة' : 'Active Shift'}</span>
+                <span>{language === 'ar' ? 'الوردية مفتوحة' : 'Active Shift'}</span>
                 <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>•</span>
-                <span style={{ color: 'var(--text-primary)', fontFamily: 'JetBrains Mono, monospace' }}>
-                  +{formatCurrency(Number(effectiveShift.total_revenue || 0))}
-                </span>
-              </button>
-            ) : null}
-
-            <button
-              onClick={() => navigate('/settings')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(0, 229, 255, 0.08)',
-                border: '1px solid rgba(0, 229, 255, 0.28)',
-                borderRadius: '20px',
-                padding: '5px 12px',
-                color: 'var(--accent-cyan)',
-                fontSize: '11px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: 'JetBrains Mono, monospace',
-              }}
-              title={language === 'ar' ? 'قاعدة البيانات السحابية متصلة ومستقرة (Supabase Cloud + Local SQLite)' : 'Supabase Cloud + Local SQLite Connected'}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
-                cloud_done
-              </span>
-              <span>{language === 'ar' ? 'السحابة متصلة' : 'CLOUD SYNC'}</span>
-            </button>
-          </div>
-
-          {/* Middle: Trial or Expiry Warning Banner (Circled in red in screenshot) */}
-          {(isTrial || isExpiringSoon) && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                background: isTrial
-                  ? 'rgba(245, 158, 11, 0.12)'
-                  : 'rgba(239, 68, 68, 0.12)',
-                border: isTrial
-                  ? '1px solid rgba(245, 158, 11, 0.35)'
-                  : '1px solid rgba(239, 68, 68, 0.35)',
-                color: isTrial ? '#fbbf24' : '#f87171',
-                boxShadow: isTrial
-                  ? '0 0 12px rgba(245, 158, 11, 0.15)'
-                  : '0 0 12px rgba(239, 68, 68, 0.15)',
-              }}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{
-                  fontSize: '18px',
-                  color: isTrial ? '#fbbf24' : '#f87171',
-                }}
-              >
-                {isTrial ? 'hourglass_top' : 'warning'}
-              </span>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 700 }}>
-                <span>
-                  {isTrial
-                    ? (language === 'ar' ? 'الفترة التجريبية تقترب من الانتهاء' : 'Trial period ending soon')
-                    : (language === 'ar' ? 'تنبيه: اقتراب انتهاء الاشتراك' : 'Subscription Expiring Soon')}
-                </span>
-
-                <span style={{ opacity: 0.6 }}>•</span>
-
-                <span style={{ color: daysRemaining === 0 ? '#ef4444' : 'inherit' }}>
-                  {isTrial
-                    ? (daysRemaining === 0
-                        ? (language === 'ar' ? 'تنتهي اليوم!' : 'Expires Today!')
-                        : (language === 'ar' ? 'صالحة لمدة يومين' : 'Valid for 2 days'))
-                    : (daysRemaining !== null
-                        ? (daysRemaining === 0
-                            ? (language === 'ar' ? 'تنتهي اليوم!' : 'Expires Today!')
-                            : (language === 'ar' ? `متبقي ${daysRemaining} يوم` : `${daysRemaining} days left`))
-                        : (language === 'ar' ? 'صالحة لمدة يومين' : 'Valid for 2 days'))}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowSupportModal(true)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  background: isTrial
-                    ? 'rgba(245, 158, 11, 0.2)'
-                    : 'rgba(239, 68, 68, 0.2)',
-                  border: isTrial
-                    ? '1px solid rgba(245, 158, 11, 0.4)'
-                    : '1px solid rgba(239, 68, 68, 0.4)',
-                  color: '#ffffff',
-                  padding: '3px 10px',
-                  borderRadius: '12px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = isTrial ? '#f59e0b' : '#ef4444';
-                  e.currentTarget.style.color = '#000000';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = isTrial ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)';
-                  e.currentTarget.style.color = '#ffffff';
-                }}
-                title={language === 'ar' ? 'تواصل مع الدعم الفني لتفعيل وترقية الحساب' : 'Contact support to activate full license'}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
-                  upgrade
-                </span>
-                <span>{language === 'ar' ? 'تفعيل كامل' : 'Activate'}</span>
-              </button>
-            </div>
-          )}
-
-          {/* Right panel: User controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <button
-                onClick={toggleTheme}
-                style={{
-                  color: theme === 'dark' ? '#F59E0B' : 'var(--accent-cyan)',
-                  padding: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: theme === 'dark' ? 'rgba(245, 158, 11, 0.12)' : 'var(--accent-cyan-dim)',
-                  border: theme === 'dark' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid var(--border-glow)',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                title={t('toggle_theme')}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                  {theme === 'dark' ? 'light_mode' : 'dark_mode'}
-                </span>
-              </button>
-
-              <button
-                onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-                style={{
-                  color: 'var(--accent-cyan)',
-                  padding: '6px 10px',
-                  display: 'flex',
-                  background: 'var(--accent-cyan-dim)',
-                  border: '1px solid var(--border-glow)',
-                  borderRadius: '6px',
-                  fontWeight: 700,
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  fontFamily: isRtl ? 'Cairo, sans-serif' : 'Space Grotesk, sans-serif'
-                }}
-                title={language === 'en' ? 'Arabic' : 'English'}
-              >
-                {language === 'en' ? 'العربية' : 'English'}
-              </button>
-
-              <button
-                onClick={() => toast(t('no_notifications'), 'info')}
-                style={{ color: 'var(--text-secondary)', padding: '8px', display: 'flex', transition: 'color 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-cyan)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>notifications</span>
-              </button>
-              <button
-                onClick={() => navigate('/settings')}
-                style={{ color: 'var(--text-secondary)', padding: '8px', display: 'flex', transition: 'color 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-cyan)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>settings</span>
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  textAlign: isRtl ? 'left' : 'right',
-                  padding: '6px 14px',
-                  borderRadius: '8px',
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-default)',
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    color: 'var(--text-primary)',
-                    lineHeight: '1.2',
-                    margin: 0,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  {user?.full_name ? user.full_name : 'Admin'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </header>
-      )}
-
-      {/* Top AppBar for Mobile (Active Shift Bar & Status) */}
-      {isMobile && (
-        <header
-          style={{
-            height: 'calc(54px + var(--safe-top))',
-            paddingTop: 'var(--safe-top)',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 80,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingLeft: '14px',
-            paddingRight: '14px',
-            borderBottom: '1px solid var(--border-default)',
-            backdropFilter: 'blur(16px)',
-            background: 'var(--header-bg)',
-            boxShadow: 'var(--shadow-card)',
-          }}
-        >
-          {/* Active Shift status pill */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {effectiveShift ? (
-              <button
-                onClick={() => navigate('/shifts')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'rgba(34, 197, 94, 0.12)',
-                  border: '1px solid rgba(34, 197, 94, 0.35)',
-                  borderRadius: '20px',
-                  padding: '6px 12px',
-                  color: 'var(--accent-green)',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 0 10px rgba(34, 197, 94, 0.15)',
-                }}
-                title={language === 'ar' ? 'عرض تفاصيل الوردية النشطة' : 'View active shift details'}
-              >
-                <span
-                  style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: 'var(--accent-green)',
-                    animation: 'pulse 1.5s infinite',
-                  }}
-                />
-                <span>{language === 'ar' ? 'الوردية نشطة' : 'Active Shift'}</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>•</span>
-                <span style={{ color: 'var(--text-primary)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 800 }}>
-                  +{formatCurrency(Number(effectiveShift.total_revenue || 0))}
+                <span style={{ color: 'var(--text-primary)', fontFamily: 'JetBrains Mono, monospace', fontVariantNumeric: 'tabular-nums' }}>
+                  {formatCurrency(Number(effectiveShift.total_revenue || 0))}
                 </span>
               </button>
             ) : (
@@ -436,14 +166,275 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  background: 'rgba(245, 158, 11, 0.1)',
-                  border: '1px solid rgba(245, 158, 11, 0.3)',
-                  borderRadius: '20px',
-                  padding: '5px 10px',
-                  color: 'var(--accent-yellow)',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-default)',
+                  borderRadius: '10px',
+                  padding: '6px 12px',
+                  color: 'var(--text-secondary)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '15px', color: 'var(--accent-yellow)' }}>schedule</span>
+                <span>{language === 'ar' ? 'لا توجد وردية مفتوحة' : 'No Open Shift'}</span>
+              </button>
+            )}
+          </div>
+
+          {/* Middle: Trial or Expiry Warning Banner */}
+          {(isTrial || isExpiringSoon) && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '6px 14px',
+                borderRadius: '10px',
+                background: isTrial
+                  ? 'rgba(245, 158, 11, 0.1)'
+                  : 'rgba(239, 68, 68, 0.1)',
+                border: isTrial
+                  ? '1px solid rgba(245, 158, 11, 0.3)'
+                  : '1px solid rgba(239, 68, 68, 0.3)',
+                color: isTrial ? '#fbbf24' : '#f87171',
+              }}
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{
+                  fontSize: '16px',
+                  color: isTrial ? '#fbbf24' : '#f87171',
+                }}
+              >
+                {isTrial ? 'hourglass_top' : 'warning'}
+              </span>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 600 }}>
+                <span>
+                  {isTrial
+                    ? (language === 'ar' ? 'فترة تجريبية' : 'Trial Period')
+                    : (language === 'ar' ? 'اقتراب انتهاء الاشتراك' : 'Subscription Expiring')}
+                </span>
+
+                <span style={{ opacity: 0.5 }}>•</span>
+
+                <span style={{ color: daysRemaining === 0 ? '#ef4444' : 'inherit' }}>
+                  {daysRemaining !== null
+                    ? (daysRemaining <= 0
+                        ? (language === 'ar' ? 'تنتهي اليوم' : 'Expires Today')
+                        : (language === 'ar' ? `متبقي ${daysRemaining} يوم` : `${daysRemaining}d left`))
+                    : (language === 'ar' ? 'تجريبي' : 'Trial')}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowSupportModal(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  background: isTrial ? 'rgba(245, 158, 11, 0.18)' : 'rgba(239, 68, 68, 0.18)',
+                  border: isTrial ? '1px solid rgba(245, 158, 11, 0.38)' : '1px solid rgba(239, 68, 68, 0.38)',
+                  color: 'var(--text-primary)',
+                  padding: '3px 10px',
+                  borderRadius: '8px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+                title={language === 'ar' ? 'تواصل مع الدعم لتفعيل الاشتراك' : 'Contact support to upgrade'}
+              >
+                <span>{language === 'ar' ? 'تفعيل الاشتراك' : 'Upgrade'}</span>
+              </button>
+            </div>
+          )}
+
+          {/* Right panel: Theme, Language & User */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button
+                onClick={toggleTheme}
+                aria-label={t('toggle_theme')}
+                style={{
+                  color: 'var(--accent-primary)',
+                  width: '34px',
+                  height: '34px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'var(--accent-primary-dim)',
+                  border: '1px solid var(--border-glow)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                title={t('toggle_theme')}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>
+                  {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+                style={{
+                  color: 'var(--text-primary)',
+                  height: '34px',
+                  padding: '0 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-default)',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                title={language === 'en' ? 'التبديل للعربية' : 'Switch to English'}
+              >
+                {language === 'en' ? 'العربية' : 'English'}
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '5px 12px',
+                borderRadius: '8px',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-default)',
+              }}
+            >
+              <div
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: 'var(--accent-primary-dim)',
+                  color: 'var(--accent-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                }}
+              >
+                {(user?.full_name ?? 'A').charAt(0).toUpperCase()}
+              </div>
+              <p
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  lineHeight: '1.2',
+                  margin: 0,
+                }}
+              >
+                {user?.full_name ? user.full_name : (language === 'ar' ? 'المدير' : 'Admin')}
+              </p>
+            </div>
+          </div>
+        </header>
+      )}
+
+      {/* Top AppBar for Mobile (Compact Brand + Active Shift + Controls) */}
+      {isMobile && (
+        <header
+          style={{
+            height: 'calc(52px + var(--safe-top))',
+            paddingTop: 'var(--safe-top)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 80,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            paddingLeft: '12px',
+            paddingRight: '12px',
+            borderBottom: '1px solid var(--border-default)',
+            backdropFilter: 'blur(16px)',
+            background: 'var(--header-bg)',
+          }}
+        >
+          {/* Left: Mini Logo + Shift Pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              aria-label="Home"
+              style={{
+                width: '30px',
+                height: '30px',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                border: '1px solid var(--border-glow)',
+                background: '#0B0B0D',
+                flexShrink: 0,
+                padding: 0,
+              }}
+            >
+              <img src="./ccms-logo.svg" alt="CCMS" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+            </button>
+
+            {effectiveShift ? (
+              <button
+                onClick={() => navigate('/shifts')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'rgba(34, 197, 94, 0.1)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  borderRadius: '8px',
+                  padding: '5px 9px',
+                  color: 'var(--accent-green)',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  minWidth: 0,
+                  maxWidth: '100%',
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: 'var(--accent-green)',
+                    flexShrink: 0,
+                  }}
+                />
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {language === 'ar' ? 'الوردية' : 'Shift'}
+                </span>
+                <span style={{ color: 'var(--text-primary)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  {formatCurrency(Number(effectiveShift.total_revenue || 0))}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/shifts')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-default)',
+                  borderRadius: '8px',
+                  padding: '5px 9px',
+                  color: 'var(--text-secondary)',
                   fontSize: '11px',
                   fontWeight: 600,
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 <span
@@ -452,6 +443,7 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
                     height: '6px',
                     borderRadius: '50%',
                     background: 'var(--accent-yellow)',
+                    flexShrink: 0,
                   }}
                 />
                 <span>{language === 'ar' ? 'لا توجد وردية' : 'No Shift'}</span>
@@ -459,70 +451,47 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
             )}
           </div>
 
-          {/* Quick controls & user tag */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {/* Right: Compact Language & Theme buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            <button
+              onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+              style={{
+                height: '32px',
+                padding: '0 8px',
+                borderRadius: '8px',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-default)',
+                color: 'var(--text-primary)',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+              aria-label="Toggle language"
+            >
+              {language === 'en' ? 'عربي' : 'EN'}
+            </button>
+
             <button
               onClick={toggleTheme}
+              aria-label={t('toggle_theme')}
               style={{
-                color: theme === 'dark' ? '#F59E0B' : 'var(--accent-cyan)',
+                color: 'var(--accent-primary)',
                 width: '32px',
                 height: '32px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: theme === 'dark' ? 'rgba(245, 158, 11, 0.12)' : 'var(--accent-cyan-dim)',
-                border: theme === 'dark' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid var(--border-glow)',
+                background: 'var(--accent-primary-dim)',
+                border: '1px solid var(--border-glow)',
                 borderRadius: '8px',
                 cursor: 'pointer',
               }}
               title={t('toggle_theme')}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>
                 {theme === 'dark' ? 'light_mode' : 'dark_mode'}
               </span>
             </button>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '4px 8px',
-                borderRadius: '8px',
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border-default)',
-              }}
-            >
-              <div
-                style={{
-                  width: '22px',
-                  height: '22px',
-                  borderRadius: '50%',
-                  background: 'var(--accent-cyan-dim)',
-                  color: 'var(--accent-cyan)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                }}
-              >
-                {(user?.full_name ?? '?').charAt(0).toUpperCase()}
-              </div>
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
-                  maxWidth: '80px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {user?.full_name ? user.full_name : 'Admin'}
-              </span>
-            </div>
           </div>
         </header>
       )}
@@ -531,10 +500,12 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
         style={{
           marginLeft: isRtl ? 0 : (isMobile ? 0 : 'var(--sidebar-width)'),
           marginRight: isRtl ? (isMobile ? 0 : 'var(--sidebar-width)') : 0,
-          padding: isMobile ? '16px' : '32px',
-          paddingTop: isMobile ? 'calc(70px + var(--safe-top))' : (title || subtitle ? '96px' : '74px'), // offset fixed top app bar
-          paddingBottom: isMobile ? 'calc(80px + var(--safe-bottom))' : '32px',
+          padding: isMobile ? '12px' : '28px 32px',
+          paddingTop: isMobile ? 'calc(64px + var(--safe-top))' : (title || subtitle ? '92px' : '78px'),
+          paddingBottom: isMobile ? 'calc(74px + var(--safe-bottom))' : '32px',
           minHeight: '100vh',
+          maxWidth: '100%',
+          overflowX: 'hidden',
           flex: 1,
         }}
       >
@@ -546,20 +517,20 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
               alignItems: isMobile ? 'stretch' : 'center',
               flexDirection: isMobile && (title || subtitle) ? 'column' : 'row',
               justifyContent: (title || subtitle) ? 'space-between' : (isRtl ? 'flex-start' : 'flex-end'),
-              gap: isMobile ? '12px' : '16px',
-              marginBottom: (title || subtitle) ? (isMobile ? '20px' : '32px') : '16px',
+              gap: isMobile ? '10px' : '16px',
+              marginBottom: (title || subtitle) ? (isMobile ? '14px' : '24px') : '14px',
               width: '100%',
               maxWidth: '100%',
               boxSizing: 'border-box',
             }}
           >
             {(title || subtitle) && (
-              <div style={{ width: isMobile ? '100%' : 'auto' }}>
+              <div style={{ width: isMobile ? '100%' : 'auto', minWidth: 0 }}>
                 {title && (
                   <h1
                     className="ccms-page-title"
                     style={{
-                      fontSize: isMobile ? '22px' : '32px',
+                      fontSize: isMobile ? '20px' : '28px',
                       wordBreak: 'break-word',
                     }}
                   >
@@ -570,10 +541,8 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
                   <p
                     style={{
                       color: 'var(--text-secondary)',
-                      marginTop: '6px',
-                      fontSize: isMobile ? '13px' : '15px',
-                      fontFamily: 'Inter, sans-serif',
-                      opacity: 0.8,
+                      marginTop: '4px',
+                      fontSize: isMobile ? '12.5px' : '14px',
                       wordBreak: 'break-word',
                     }}
                   >
@@ -586,7 +555,7 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
               <div
                 style={{
                   display: 'flex',
-                  gap: isMobile ? '8px' : '12px',
+                  gap: isMobile ? '8px' : '10px',
                   alignItems: 'center',
                   flexWrap: 'wrap',
                   width: isMobile ? '100%' : 'auto',
@@ -602,19 +571,20 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
         )}
 
         {/* Page body */}
-        <div>{children}</div>
+        <div style={{ maxWidth: '100%', minWidth: 0 }}>{children}</div>
       </main>
 
       {/* Mobile Adaptive Bottom Navigation */}
       {isMobile && (
         <>
           <nav
+            aria-label="Mobile Navigation"
             style={{
               position: 'fixed',
               bottom: 0,
               left: 0,
               right: 0,
-              height: 'calc(60px + var(--safe-bottom))',
+              height: 'calc(58px + var(--safe-bottom))',
               paddingBottom: 'var(--safe-bottom)',
               background: 'var(--bg-surface)',
               borderTop: '1px solid var(--border-default)',
@@ -622,7 +592,7 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
               justifyContent: 'space-around',
               alignItems: 'center',
               zIndex: 999,
-              boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.3)',
+              boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.28)',
             }}
           >
             {mobileMainItems.map((item) => (
@@ -634,42 +604,46 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '4px',
-                  color: isActive ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                  gap: '3px',
+                  color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
                   textDecoration: 'none',
-                  fontSize: '10px',
-                  fontWeight: 600,
+                  fontSize: '10.5px',
+                  fontWeight: isActive ? 700 : 500,
                   flex: 1,
+                  minWidth: 0,
                   height: '100%',
                   minHeight: '44px',
+                  padding: '0 2px',
                   transition: 'color 0.2s ease',
-                  textShadow: isActive ? '0 0 10px rgba(0, 212, 255, 0.2)' : 'none',
                 })}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{item.icon}</span>
-                <span style={{ fontFamily: isRtl ? 'Cairo, sans-serif' : 'JetBrains Mono, monospace', fontSize: '9px' }}>{item.label}</span>
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{item.icon}</span>
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{item.label}</span>
               </NavLink>
             ))}
 
             <button
+              type="button"
               onClick={() => setShowMoreMenu(!showMoreMenu)}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '4px',
-                color: showMoreMenu ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-                fontSize: '10px',
-                fontWeight: 600,
+                gap: '3px',
+                color: showMoreMenu ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                fontSize: '10.5px',
+                fontWeight: showMoreMenu ? 700 : 500,
                 flex: 1,
+                minWidth: 0,
                 height: '100%',
                 minHeight: '44px',
+                padding: '0 2px',
                 transition: 'color 0.2s ease',
               }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>menu</span>
-              <span style={{ fontFamily: isRtl ? 'Cairo, sans-serif' : 'JetBrains Mono, monospace', fontSize: '9px' }}>{t('more')}</span>
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>menu</span>
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{t('more')}</span>
             </button>
           </nav>
 
@@ -681,7 +655,7 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
                 style={{
                   position: 'fixed',
                   inset: 0,
-                  background: 'rgba(5, 8, 16, 0.75)',
+                  background: 'rgba(10, 10, 11, 0.72)',
                   backdropFilter: 'blur(6px)',
                   zIndex: 1000,
                   animation: 'fade-in 0.2s ease',
@@ -801,7 +775,7 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
                       fontSize: '13px',
                       minHeight: '44px',
                       cursor: 'pointer',
-                      fontFamily: isRtl ? 'Cairo, sans-serif' : 'Space Grotesk, sans-serif'
+                      fontFamily: isRtl ? 'Cairo, sans-serif' : 'Plus Jakarta Sans, sans-serif'
                     }}
                     title={language === 'en' ? 'Arabic' : 'English'}
                   >
@@ -816,6 +790,69 @@ export function Layout({ title, subtitle, actions, children, currentShift }: Lay
                     {language === 'ar' ? 'العمليات والخدمات' : 'Operations & Services'}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <NavLink
+                      to="/pcs"
+                      onClick={() => setShowMoreMenu(false)}
+                      style={({ isActive }) => ({
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        color: isActive ? 'var(--accent-cyan)' : 'var(--text-primary)',
+                        background: isActive ? 'var(--accent-primary-dim)' : 'transparent',
+                        textDecoration: 'none',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        minHeight: '42px',
+                      })}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-cyan)' }}>desktop_windows</span>
+                      <span>{t('pc_control')}</span>
+                    </NavLink>
+
+                    <NavLink
+                      to="/devices"
+                      onClick={() => setShowMoreMenu(false)}
+                      style={({ isActive }) => ({
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        color: isActive ? 'var(--accent-cyan)' : 'var(--text-primary)',
+                        background: isActive ? 'var(--accent-cyan-dim)' : 'transparent',
+                        textDecoration: 'none',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        minHeight: '42px',
+                      })}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-cyan)' }}>devices</span>
+                      <span>{t('devices')}</span>
+                    </NavLink>
+
+                    <NavLink
+                      to="/cafe-tables"
+                      onClick={() => setShowMoreMenu(false)}
+                      style={({ isActive }) => ({
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        color: isActive ? 'var(--accent-cyan)' : 'var(--text-primary)',
+                        background: isActive ? 'var(--accent-cyan-dim)' : 'transparent',
+                        textDecoration: 'none',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        minHeight: '42px',
+                      })}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-yellow)' }}>table_restaurant</span>
+                      <span>{t('cafe_tables')}</span>
+                    </NavLink>
+
                     <NavLink
                       to="/products"
                       onClick={() => setShowMoreMenu(false)}

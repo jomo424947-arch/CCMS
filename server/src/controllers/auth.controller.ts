@@ -717,6 +717,7 @@ function calculateDefaultExpiry(plan: string): string {
       date.setDate(date.getDate() + 90);
       break;
     case 'yearly_full':
+    case 'annual_full':
       date.setDate(date.getDate() + 365);
       break;
     default:
@@ -725,8 +726,36 @@ function calculateDefaultExpiry(plan: string): string {
   return date.toISOString();
 }
 
+/** Timing-safe verification of the Super Admin secret key from header or body. */
+function verifySuperAdminKey(req: Request): void {
+  const expectedKey = process.env.SUPER_ADMIN_KEY?.trim();
+  if (!expectedKey) {
+    throw new Error('SUPER_ADMIN_KEY is not configured. Super Admin endpoints are disabled.');
+  }
+
+  const headerKey = typeof req.headers['x-super-admin-key'] === 'string'
+    ? req.headers['x-super-admin-key'].trim()
+    : '';
+  const bodyKey = typeof req.body?.secretKey === 'string'
+    ? req.body.secretKey.trim()
+    : '';
+  const providedKey = headerKey || bodyKey;
+
+  if (!providedKey) {
+    throw unauthorized('Invalid Super Admin Secret Key passcode');
+  }
+
+  const expectedBuf = Buffer.from(expectedKey, 'utf8');
+  const providedBuf = Buffer.from(providedKey, 'utf8');
+  if (expectedBuf.length !== providedBuf.length || !crypto.timingSafeEqual(expectedBuf, providedBuf)) {
+    throw unauthorized('Invalid Super Admin Secret Key passcode');
+  }
+}
+
 /** POST /api/auth/register-tenant — Registers a new cyber café (tenant) and its owner user. */
 export async function registerTenant(req: Request, res: Response) {
+  verifySuperAdminKey(req);
+
   const {
     tenantName,
     ownerFullName,
@@ -735,76 +764,93 @@ export async function registerTenant(req: Request, res: Response) {
     status = 'active',
     plan = 'monthly_full',
     expires_at,
-    secretKey,
   } = req.body;
 
-  const expectedKey = process.env.SUPER_ADMIN_KEY;
-  if (!expectedKey) {
-    throw new Error('SUPER_ADMIN_KEY is not configured. Super Admin endpoints are disabled.');
-  }
-  if (!secretKey || secretKey !== expectedKey) {
-    throw unauthorized('Invalid Super Admin Secret Key passcode');
+  const cleanTenantName = typeof tenantName === 'string' ? tenantName.trim() : '';
+  const cleanOwnerFullName = typeof ownerFullName === 'string' ? ownerFullName.trim() : '';
+  const cleanOwnerEmail = typeof ownerEmail === 'string' ? ownerEmail.trim().toLowerCase() : '';
+  const cleanPassword = typeof ownerPassword === 'string' ? ownerPassword : '';
+
+  if (!cleanTenantName || !cleanOwnerFullName || !cleanOwnerEmail || !cleanPassword) {
+    throw badRequest('جميع الحقول مطلوبة: اسم الصالة، اسم المالك، البريد الإلكتروني، وكلمة المرور.');
   }
 
-  if (!tenantName || !ownerFullName || !ownerEmail || !ownerPassword) {
-    throw badRequest('All fields are required (tenantName, ownerFullName, ownerEmail, ownerPassword)');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanOwnerEmail)) {
+    throw badRequest('صيغة البريد الإلكتروني غير صحيحة.');
+  }
+
+  if (cleanPassword.length < 6) {
+    throw badRequest('كلمة المرور يجب أن تتكون من 6 أحرف على الأقل.');
+  }
+
+  if (!['active', 'trial', 'suspended'].includes(status)) {
+    throw badRequest('حالة الاشتراك غير صالحة. يجب أن تكون active أو trial أو suspended.');
   }
 
   if (!cloudSupabase) {
     throw badRequest('Supabase cloud connection not configured in .env (Requires SUPER_ADMIN keys)');
   }
 
-  const computedExpiry = expires_at || calculateDefaultExpiry(plan);
+  const normalizedPlan = plan === 'annual_full' ? 'yearly_full' : plan;
+  const computedExpiry = expires_at || calculateDefaultExpiry(normalizedPlan);
 
   // 1. Create User in Supabase Auth
   const { data: authData, error: authErr } = await cloudSupabase.auth.admin.createUser({
-    email: ownerEmail,
-    password: ownerPassword,
+    email: cleanOwnerEmail,
+    password: cleanPassword,
     email_confirm: true,
+    user_metadata: {
+      full_name: cleanOwnerFullName,
+      role: 'admin',
+    },
   });
 
   if (authErr || !authData.user) {
-    throw badRequest(authErr?.message || 'Failed to create user in Supabase Auth');
+    const rawMsg = authErr?.message || 'Failed to create user in Supabase Auth';
+    if (/already\s+(been\s+)?registered|already\s+exists/i.test(rawMsg)) {
+      throw conflict(`البريد الإلكتروني "${cleanOwnerEmail}" مسجل مسبقاً لصالة أو مستخدم آخر.`);
+    }
+    throw badRequest(rawMsg);
   }
 
   const userId = authData.user.id;
 
   // 2. Create Tenant (with graceful fallback if plan/expires_at columns are pending)
   const tenantId = crypto.randomUUID();
-  let tenantInsertPayload: any = {
+  const createdAt = new Date().toISOString();
+  const tenantInsertPayload: any = {
     id: tenantId,
-    name: tenantName,
-    owner_email: ownerEmail,
+    name: cleanTenantName,
+    owner_email: cleanOwnerEmail,
     status,
-    plan,
+    plan: normalizedPlan,
     expires_at: computedExpiry,
   };
 
   let { error: tenantErr } = await cloudSupabase.from('tenants').insert(tenantInsertPayload);
 
   if (tenantErr) {
-    // If Supabase table schema doesn't yet have plan or expires_at columns, retry with base fields
     console.warn('[SuperAdmin] Insert with plan/expires_at failed, retrying base fields:', tenantErr.message);
     const retry = await cloudSupabase.from('tenants').insert({
       id: tenantId,
-      name: tenantName,
-      owner_email: ownerEmail,
+      name: cleanTenantName,
+      owner_email: cleanOwnerEmail,
       status,
     });
     tenantErr = retry.error;
   }
 
   if (tenantErr) {
-    // Rollback user
-    await cloudSupabase.auth.admin.deleteUser(userId);
+    // Rollback auth user
+    await cloudSupabase.auth.admin.deleteUser(userId).catch(() => {});
     throw badRequest(tenantErr.message || 'Failed to create tenant profile');
   }
 
   // 3. Create User Profile (upsert to handle trigger auto-inserts)
   const { error: userErr } = await cloudSupabase.from('users').upsert({
     id: userId,
-    email: ownerEmail,
-    full_name: ownerFullName,
+    email: cleanOwnerEmail,
+    full_name: cleanOwnerFullName,
     role: 'admin',
     tenant_id: tenantId,
   });
@@ -812,7 +858,7 @@ export async function registerTenant(req: Request, res: Response) {
   if (userErr) {
     // Rollback
     await cloudSupabase.from('tenants').delete().eq('id', tenantId);
-    await cloudSupabase.auth.admin.deleteUser(userId);
+    await cloudSupabase.auth.admin.deleteUser(userId).catch(() => {});
     throw badRequest(userErr.message || 'Failed to create user profile');
   }
 
@@ -821,25 +867,19 @@ export async function registerTenant(req: Request, res: Response) {
     message: 'Cyber café registered successfully!',
     tenant: {
       id: tenantId,
-      name: tenantName,
-      owner_email: ownerEmail,
+      name: cleanTenantName,
+      owner_email: cleanOwnerEmail,
       status,
-      plan,
+      plan: normalizedPlan,
       expires_at: computedExpiry,
+      created_at: createdAt,
     },
   });
 }
 
 /** GET /api/auth/tenants — Lists all tenants from Supabase. */
 export async function getTenants(req: Request, res: Response) {
-  const secretKey = req.headers['x-super-admin-key'] as string;
-  const expectedKey = process.env.SUPER_ADMIN_KEY;
-  if (!expectedKey) {
-    throw new Error('SUPER_ADMIN_KEY is not configured. Super Admin endpoints are disabled.');
-  }
-  if (!secretKey || secretKey !== expectedKey) {
-    throw unauthorized('Invalid Super Admin Secret Key passcode');
-  }
+  verifySuperAdminKey(req);
 
   if (!cloudSupabase) {
     throw badRequest('Supabase cloud connection not configured in .env (Requires SUPER_ADMIN keys)');
@@ -856,7 +896,8 @@ export async function getTenants(req: Request, res: Response) {
 
   // Ensure default plans & expiration are populated if missing from older records
   const tenants = (rawTenants || []).map((t: any) => {
-    const plan = t.plan || (t.status === 'trial' ? 'trial' : 'monthly_full');
+    const rawPlan = t.plan || (t.status === 'trial' ? 'trial' : 'monthly_full');
+    const plan = rawPlan === 'annual_full' ? 'yearly_full' : rawPlan;
     let expiresAt = t.expires_at;
     if (!expiresAt && t.created_at) {
       const created = new Date(t.created_at);
@@ -886,14 +927,7 @@ export async function getTenants(req: Request, res: Response) {
 
 /** PATCH /api/auth/tenants/:id/status — Updates a tenant's subscription status, plan, or expiration. */
 export async function updateTenantStatus(req: Request, res: Response) {
-  const secretKey = req.headers['x-super-admin-key'] as string;
-  const expectedKey = process.env.SUPER_ADMIN_KEY;
-  if (!expectedKey) {
-    throw new Error('SUPER_ADMIN_KEY is not configured. Super Admin endpoints are disabled.');
-  }
-  if (!secretKey || secretKey !== expectedKey) {
-    throw unauthorized('Invalid Super Admin Secret Key passcode');
-  }
+  verifySuperAdminKey(req);
 
   if (!cloudSupabase) {
     throw badRequest('Supabase cloud connection not configured in .env (Requires SUPER_ADMIN keys)');
@@ -907,16 +941,17 @@ export async function updateTenantStatus(req: Request, res: Response) {
     throw badRequest('Invalid status value. Must be active, trial, or suspended.');
   }
 
+  const normalizedPlan = plan === 'annual_full' ? 'yearly_full' : plan;
   const updateFields: any = {};
   if (status) updateFields.status = status;
-  if (plan) updateFields.plan = plan;
+  if (normalizedPlan) updateFields.plan = normalizedPlan;
   if (expires_at !== undefined) updateFields.expires_at = expires_at;
 
   // Always update updated_at timestamp so changes are immediately reflected in Supabase
   updateFields.updated_at = new Date().toISOString();
 
   // If status is given but plan or expires_at is missing, calculate defaults automatically
-  if (status && (!plan || expires_at === undefined)) {
+  if (status && (!normalizedPlan || expires_at === undefined)) {
     try {
       const { data: currentTenant } = await cloudSupabase
         .from('tenants')
@@ -924,8 +959,8 @@ export async function updateTenantStatus(req: Request, res: Response) {
         .eq('id', cleanId)
         .maybeSingle();
 
-      const targetPlan = plan || currentTenant?.plan || (status === 'trial' ? 'trial' : 'monthly_full');
-      updateFields.plan = targetPlan;
+      const targetPlan = normalizedPlan || currentTenant?.plan || (status === 'trial' ? 'trial' : 'monthly_full');
+      updateFields.plan = targetPlan === 'annual_full' ? 'yearly_full' : targetPlan;
 
       if (expires_at === undefined) {
         if (status === 'trial') {
@@ -937,7 +972,7 @@ export async function updateTenantStatus(req: Request, res: Response) {
           if (currentExp > Date.now() && currentTenant?.expires_at) {
             updateFields.expires_at = currentTenant.expires_at;
           } else {
-            updateFields.expires_at = calculateDefaultExpiry(targetPlan);
+            updateFields.expires_at = calculateDefaultExpiry(updateFields.plan);
           }
         }
       }
@@ -955,14 +990,12 @@ export async function updateTenantStatus(req: Request, res: Response) {
     .eq('id', cleanId)
     .select();
 
-  if (error && (updateFields.plan || updateFields.expires_at)) {
-    // If Supabase table doesn't have plan/expires_at columns yet, fallback to base fields
+  if (error && (updateFields.plan || updateFields.expires_at || updateFields.updated_at)) {
     console.warn('[SuperAdmin] Multi-field update failed in Supabase, retrying with base fields:', error.message);
     const retry = await cloudSupabase
       .from('tenants')
       .update({
         status: status || 'active',
-        updated_at: updateFields.updated_at,
       })
       .eq('id', cleanId)
       .select();
@@ -983,8 +1016,6 @@ export async function updateTenantStatus(req: Request, res: Response) {
         updateActiveTenantStatus(status, undefined, updateFields.plan, updateFields.expires_at);
         console.log(`[SuperAdmin] Local active tenant_config updated: status=${status}, plan=${updateFields.plan}`);
       }
-    } else {
-      console.log(`[SuperAdmin] Cloud tenant ${cleanId} updated (local active tenant is ${localActiveTenantId || 'none'})`);
     }
   } catch (err: any) {
     console.error('[SuperAdmin] Failed to update local tenant_config status:', err.message);
@@ -996,6 +1027,45 @@ export async function updateTenantStatus(req: Request, res: Response) {
     success: true,
     message: 'Tenant subscription updated successfully',
     tenant: resultTenant,
+  });
+}
+
+/** DELETE /api/auth/tenants/:id — Deletes a tenant and its associated auth users from Supabase. */
+export async function deleteTenant(req: Request, res: Response) {
+  verifySuperAdminKey(req);
+
+  if (!cloudSupabase) {
+    throw badRequest('Supabase cloud connection not configured in .env (Requires SUPER_ADMIN keys)');
+  }
+
+  const cleanId = (req.params.id || '').trim();
+  if (!cleanId) {
+    throw badRequest('Tenant ID is required');
+  }
+
+  // 1. Find users belonging to this tenant so we can remove them from Supabase Auth cleanly
+  const { data: tenantUsers } = await cloudSupabase
+    .from('users')
+    .select('id')
+    .eq('tenant_id', cleanId);
+
+  // 2. Delete user profile rows and tenant row
+  await cloudSupabase.from('users').delete().eq('tenant_id', cleanId);
+  const { error: delErr } = await cloudSupabase.from('tenants').delete().eq('id', cleanId);
+  if (delErr) {
+    throw badRequest(delErr.message || 'Failed to delete tenant');
+  }
+
+  // 3. Remove Supabase Auth accounts for this tenant
+  for (const u of tenantUsers || []) {
+    await cloudSupabase.auth.admin.deleteUser(u.id).catch((err) => {
+      console.warn(`[SuperAdmin] Failed to delete auth user ${u.id}:`, err?.message || err);
+    });
+  }
+
+  res.json({
+    success: true,
+    message: 'Tenant deleted successfully',
   });
 }
 

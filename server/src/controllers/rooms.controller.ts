@@ -23,8 +23,15 @@ export async function createRoom(req: Request, res: Response) {
   }
 
   const { name, icon = 'sports_esports', device_id, type = 'console', hourly_rate = 20, hourly_rate_multi = 30 } = req.body;
+  const trimmedName = String(name || '').trim();
+  if (!trimmedName) {
+    throw badRequest('اسم الغرفة مطلوب / Room name is required');
+  }
 
-  let targetDeviceId = device_id;
+  const safeRate = Number.isFinite(Number(hourly_rate)) ? Math.max(0, Number(hourly_rate)) : 20;
+  const safeRateMulti = Number.isFinite(Number(hourly_rate_multi)) ? Math.max(0, Number(hourly_rate_multi)) : safeRate;
+
+  let targetDeviceId = device_id || null;
 
   if (targetDeviceId) {
     // 1. Verify device exists and belongs to current tenant
@@ -57,8 +64,8 @@ export async function createRoom(req: Request, res: Response) {
       await supabase
         .from('devices')
         .update({
-          hourly_rate: Number(hourly_rate),
-          hourly_rate_multi: Number(hourly_rate_multi ?? hourly_rate),
+          hourly_rate: safeRate,
+          hourly_rate_multi: safeRateMulti,
         })
         .eq('id', targetDeviceId)
         .eq('tenant_id', req.user!.tenant_id);
@@ -68,11 +75,13 @@ export async function createRoom(req: Request, res: Response) {
     const { data: newDev, error: devCreateErr } = await supabase
       .from('devices')
       .insert({
-        name: name,
-        type: type,
-        hourly_rate: Number(hourly_rate),
-        hourly_rate_multi: Number(hourly_rate_multi ?? hourly_rate),
+        name: trimmedName,
+        type,
+        hourly_rate: safeRate,
+        hourly_rate_multi: safeRateMulti,
         status: 'available',
+        is_managed: type === 'pc',
+        agent_status: 'unpaired',
         tenant_id: req.user!.tenant_id,
       })
       .select()
@@ -86,7 +95,7 @@ export async function createRoom(req: Request, res: Response) {
   const { data: room, error: roomErr } = await supabase
     .from('rooms')
     .insert({
-      name,
+      name: trimmedName,
       icon,
       device_id: targetDeviceId,
       tenant_id: req.user!.tenant_id,

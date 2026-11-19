@@ -49,7 +49,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
           )}
         </div>
       )}
-      <h3 style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 600, margin: 0 }}>
+      <h3 style={{ color: 'var(--text-primary)', fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '18px', fontWeight: 600, margin: 0 }}>
         {title}
       </h3>
       {description && <p style={{ fontSize: '14px', fontFamily: 'Inter, sans-serif', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>{description}</p>}

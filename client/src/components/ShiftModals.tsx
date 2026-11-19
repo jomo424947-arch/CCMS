@@ -289,7 +289,7 @@ export function CloseShiftModal({
           />
         </div>
 
-        <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(0, 194, 255, 0.06)', border: '1px solid rgba(0, 194, 255, 0.2)', padding: '10px 14px', borderRadius: '8px' }}>
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(223, 168, 66, 0.06)', border: '1px solid rgba(223, 168, 66, 0.2)', padding: '10px 14px', borderRadius: '8px' }}>
           <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-cyan)' }}>
             info
           </span>
@@ -385,7 +385,7 @@ export function ExpenseModal({
       }
     >
       <form onSubmit={handleAddExpense} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <div style={{ padding: '10px 14px', background: 'rgba(0, 194, 255, 0.08)', borderRadius: '8px', border: '1px solid rgba(0, 194, 255, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '10px 14px', background: 'rgba(223, 168, 66, 0.08)', borderRadius: '8px', border: '1px solid rgba(223, 168, 66, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{language === 'ar' ? 'رصيد الدرج المتاح حالياً:' : 'Current Drawer Balance:'}</span>
           <span style={{ fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', color: 'var(--accent-cyan)', fontSize: '14px' }}>{formatCurrency(currentAvailableCash)}</span>
         </div>
@@ -667,7 +667,7 @@ export function ShiftDetailsModal({
                 -{formatCurrency(summaryData.total_expenses)}
               </div>
             </div>
-            <div style={{ padding: '10px 12px', background: 'rgba(0, 194, 255, 0.1)', borderRadius: '8px', border: '1px solid rgba(0, 194, 255, 0.3)' }}>
+            <div style={{ padding: '10px 12px', background: 'rgba(223, 168, 66, 0.1)', borderRadius: '8px', border: '1px solid rgba(223, 168, 66, 0.3)' }}>
               <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: 600 }}>{language === 'ar' ? 'المتوقع بالدرج' : 'Expected in Drawer'}</span>
               <div style={{ fontSize: '15px', fontWeight: 800, color: '#fff', fontFamily: 'JetBrains Mono, monospace' }}>
                 {formatCurrency(summaryData.expected_closing)}

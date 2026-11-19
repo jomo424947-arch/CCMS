@@ -18,12 +18,21 @@ import { getActiveTenantConfig } from '../lib/database';
 import { cloudSupabase } from '../lib/cloud-supabase';
 import { runSync } from '../lib/sync-engine';
 
+function resolveControllerPort(): number {
+  return Number(
+    process.env.CCMS_PORT ||
+      (process.env.PORT && process.env.PORT !== '8080' && process.env.PORT !== '3000'
+        ? process.env.PORT
+        : 5000)
+  );
+}
+
 /**
  * GET /api/agent/discover
  * Public LAN discovery endpoint for Windows Agents.
  */
 export async function discoverController(_req: Request, res: Response) {
-  const port = Number(process.env.CCMS_PORT || (process.env.PORT && process.env.PORT !== '8080' && process.env.PORT !== '3000' ? process.env.PORT : 5000));
+  const port = resolveControllerPort();
   const metadata = getControllerDiscoveryMetadata(port);
   res.json({ data: metadata });
 }
@@ -60,7 +69,7 @@ export async function createPairingCode(req: Request, res: Response) {
     [id, tenantId, device_id, code, expiresAt, req.user.id, new Date(now).toISOString()]
   );
 
-  const port = Number(process.env.PORT || 5000);
+  const port = resolveControllerPort();
   const discovery = getControllerDiscoveryMetadata(port);
 
   const installScriptBat = [
@@ -267,7 +276,7 @@ export async function pairAgentDevice(req: Request, res: Response) {
 
   agentControlService.updateDeviceStatus(targetDevice.id, tenantId, 'online_locked', ipAddress);
 
-  const port = Number(process.env.PORT || 5000);
+  const port = resolveControllerPort();
   const discovery = getControllerDiscoveryMetadata(port);
 
   res.json({

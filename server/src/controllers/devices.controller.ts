@@ -65,17 +65,40 @@ export async function createDevice(req: Request, res: Response) {
     throw forbidden('Only admins can create devices');
   }
   const { name, type, hourly_rate, hourly_rate_multi, specs, is_managed, device_number } = req.body;
+  const trimmedName = String(name || '').trim();
+  if (!trimmedName) {
+    throw badRequest('اسم الجهاز مطلوب / Device name is required');
+  }
+
+  // Check duplicate device_number among active (non-archived) devices in this tenant
+  if (device_number !== undefined && device_number !== null) {
+    const { data: existingNum } = await supabase
+      .from('devices')
+      .select('id, name')
+      .eq('tenant_id', req.user!.tenant_id)
+      .eq('device_number', Number(device_number))
+      .eq('archived', false)
+      .maybeSingle();
+
+    if (existingNum) {
+      throw badRequest(
+        `رقم الجهاز ${device_number} مستخدم بالفعل للجهاز "${existingNum.name}". يرجى اختيار رقم آخر.`
+      );
+    }
+  }
+
+  const managedFlag = is_managed !== undefined ? Boolean(is_managed) : type === 'pc';
 
   const { data, error } = await supabase
     .from('devices')
     .insert({
-      name,
+      name: trimmedName,
       type,
-      hourly_rate,
-      hourly_rate_multi: hourly_rate_multi ?? hourly_rate,
+      hourly_rate: Number(hourly_rate ?? 0),
+      hourly_rate_multi: Number(hourly_rate_multi ?? hourly_rate ?? 0),
       specs: specs ?? null,
       status: 'available',
-      is_managed: is_managed !== undefined ? Boolean(is_managed) : type === 'pc',
+      is_managed: managedFlag,
       device_number: device_number ?? null,
       agent_status: 'unpaired',
       tenant_id: req.user!.tenant_id,
@@ -84,7 +107,10 @@ export async function createDevice(req: Request, res: Response) {
     .single();
 
   if (error) {
-    if (error.code === '23505') throw badRequest('A device with that name or number already exists');
+    const errMsg = String(error.message || '');
+    if (error.code === '23505' || errMsg.includes('UNIQUE constraint failed')) {
+      throw badRequest('يوجد جهاز آخر بنفس الاسم أو الرقم بالفعل / A device with that name or number already exists');
+    }
     throw error;
   }
   res.status(201).json({ data: { ...(data as any), is_managed: Boolean((data as any)?.is_managed) } as DbDevice });
@@ -124,14 +150,31 @@ export async function updateDevice(req: Request, res: Response) {
     }
   }
 
+  if (device_number !== undefined && device_number !== null) {
+    const { data: existingNum } = await supabase
+      .from('devices')
+      .select('id, name')
+      .eq('tenant_id', req.user!.tenant_id)
+      .eq('device_number', Number(device_number))
+      .eq('archived', false)
+      .neq('id', id)
+      .maybeSingle();
+
+    if (existingNum) {
+      throw badRequest(
+        `رقم الجهاز ${device_number} مستخدم بالفعل للجهاز "${existingNum.name}". يرجى اختيار رقم آخر.`
+      );
+    }
+  }
+
   const patch: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
-  if (name !== undefined) patch.name = name;
+  if (name !== undefined) patch.name = String(name).trim();
   if (type !== undefined) patch.type = type;
   if (status !== undefined) patch.status = status;
-  if (hourly_rate !== undefined) patch.hourly_rate = hourly_rate;
-  if (hourly_rate_multi !== undefined) patch.hourly_rate_multi = hourly_rate_multi;
+  if (hourly_rate !== undefined) patch.hourly_rate = Number(hourly_rate);
+  if (hourly_rate_multi !== undefined) patch.hourly_rate_multi = Number(hourly_rate_multi);
   if (specs !== undefined) patch.specs = specs;
   if (is_managed !== undefined) patch.is_managed = is_managed ? 1 : 0;
   if (device_number !== undefined) patch.device_number = device_number;
@@ -144,7 +187,13 @@ export async function updateDevice(req: Request, res: Response) {
     .select()
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    const errMsg = String(error.message || '');
+    if (error.code === '23505' || errMsg.includes('UNIQUE constraint failed')) {
+      throw badRequest('يوجد جهاز آخر بنفس الرقم بالفعل / Duplicate device number');
+    }
+    throw error;
+  }
   if (!data) throw notFound('Device not found');
   res.json({ data: { ...(data as any), is_managed: Boolean((data as any)?.is_managed) } as DbDevice });
 }

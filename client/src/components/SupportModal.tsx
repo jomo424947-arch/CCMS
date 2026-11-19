@@ -42,8 +42,8 @@ export function SupportModal({ open, onClose }: SupportModalProps) {
           style={{
             padding: '16px 20px',
             borderRadius: '10px',
-            background: 'rgba(0, 194, 255, 0.06)',
-            border: '1px solid rgba(0, 194, 255, 0.2)',
+            background: 'rgba(223, 168, 66, 0.06)',
+            border: '1px solid rgba(223, 168, 66, 0.2)',
             display: 'flex',
             alignItems: 'center',
             gap: '14px',
@@ -54,8 +54,8 @@ export function SupportModal({ open, onClose }: SupportModalProps) {
               width: '12px',
               height: '12px',
               borderRadius: '50%',
-              background: '#00E5FF',
-              boxShadow: '0 0 10px #00E5FF',
+              background: '#DFA842',
+              boxShadow: '0 0 10px #DFA842',
               flexShrink: 0,
             }}
           />

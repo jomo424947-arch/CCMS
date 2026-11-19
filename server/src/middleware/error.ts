@@ -16,14 +16,18 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   }
 
   if (err instanceof ZodError) {
+    const issues = err.issues.map((i) => ({
+      path: i.path.join('.'),
+      message: i.message,
+    }));
+    const detailText = issues
+      .map((i) => (i.path ? `${i.path}: ${i.message}` : i.message))
+      .join(' · ');
     return res.status(400).json({
       error: {
-        message: 'Validation failed',
+        message: detailText ? `Validation failed — ${detailText}` : 'Validation failed',
         code: 'VALIDATION_ERROR',
-        issues: err.issues.map((i) => ({
-          path: i.path.join('.'),
-          message: i.message,
-        })),
+        issues,
       },
     });
   }

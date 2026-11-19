@@ -82,13 +82,13 @@ export default function CustomerProfilePage() {
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
           gap: '24px',
-          borderTop: '1px solid rgba(0, 194, 255, 0.3)',
+          borderTop: '1px solid rgba(223, 168, 66, 0.3)',
           textAlign: isRtl ? 'right' : 'left',
         }}
       >
         <div>
           <span className="ccms-eyebrow">{language === 'ar' ? 'الاسم الظاهر' : 'Display Name'}</span>
-          <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '24px', color: 'var(--text-primary)', marginTop: '8px', fontWeight: 600, margin: 0 }}>
+          <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '24px', color: 'var(--text-primary)', marginTop: '8px', fontWeight: 600, margin: 0 }}>
             {customer.name}
           </h2>
         </div>
@@ -156,7 +156,7 @@ export default function CustomerProfilePage() {
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap', justifyContent: isRtl ? 'flex-start' : undefined }}>
             <div
               style={{
-                fontFamily: 'Space Grotesk, sans-serif',
+                fontFamily: 'Plus Jakarta Sans, sans-serif',
                 fontSize: '28px',
                 fontWeight: 600,
                 lineHeight: 1.2,
@@ -196,7 +196,7 @@ export default function CustomerProfilePage() {
       {/* History table */}
       <div className="ccms-card" style={{ padding: '0', overflow: 'hidden' }}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', textAlign: isRtl ? 'right' : 'left' }}>
-          <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+          <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
             {language === 'ar' ? 'سجل الجلسات والألعاب' : 'Session History'}
           </h3>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
@@ -229,7 +229,7 @@ export default function CustomerProfilePage() {
                   <Badge 
                     label={s.session_type === 'fixed' ? (language === 'ar' ? 'وقت محدد' : 'Fixed Time') : (language === 'ar' ? 'وقت مفتوح' : 'Open Time')} 
                     color={s.session_type === 'fixed' ? 'var(--accent-purple)' : 'var(--accent-cyan)'} 
-                    bg={s.session_type === 'fixed' ? 'rgba(54, 38, 206, 0.1)' : 'rgba(0, 194, 255, 0.1)'}
+                    bg={s.session_type === 'fixed' ? 'rgba(196, 138, 105, 0.1)' : 'rgba(223, 168, 66, 0.1)'}
                   />
                 )
               },

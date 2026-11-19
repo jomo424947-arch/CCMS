@@ -64,9 +64,9 @@ export function SessionOrdersRow({ session, expanded, onEndSession }: Props) {
             style={{
               margin: '0 24px 16px 24px',
               padding: '16px 20px',
-              background: 'linear-gradient(135deg, rgba(0, 194, 255, 0.03) 0%, rgba(54, 38, 206, 0.03) 100%)',
+              background: 'linear-gradient(135deg, rgba(223, 168, 66, 0.03) 0%, rgba(196, 138, 105, 0.03) 100%)',
               borderRadius: '12px',
-              border: '1px solid rgba(0, 194, 255, 0.12)',
+              border: '1px solid rgba(223, 168, 66, 0.12)',
               position: 'relative',
             }}
           >
@@ -78,7 +78,7 @@ export function SessionOrdersRow({ session, expanded, onEndSession }: Props) {
                 left: '20px',
                 right: '20px',
                 height: '1px',
-                background: 'linear-gradient(90deg, transparent, rgba(0, 194, 255, 0.3), transparent)',
+                background: 'linear-gradient(90deg, transparent, rgba(223, 168, 66, 0.3), transparent)',
               }}
             />
 
@@ -120,7 +120,7 @@ export function SessionOrdersRow({ session, expanded, onEndSession }: Props) {
                     fontSize: '10px',
                     fontWeight: 700,
                     color: 'var(--accent-cyan)',
-                    background: 'rgba(0, 194, 255, 0.1)',
+                    background: 'rgba(223, 168, 66, 0.1)',
                     padding: '2px 8px',
                     borderRadius: '10px',
                     fontFamily: 'JetBrains Mono, monospace',
@@ -147,7 +147,7 @@ export function SessionOrdersRow({ session, expanded, onEndSession }: Props) {
                   style={{
                     width: '14px',
                     height: '14px',
-                    border: '2px solid rgba(0, 194, 255, 0.2)',
+                    border: '2px solid rgba(223, 168, 66, 0.2)',
                     borderTopColor: 'var(--accent-cyan)',
                     borderRadius: '50%',
                     animation: 'spin 0.6s linear infinite',
@@ -249,8 +249,8 @@ export function SessionOrdersRow({ session, expanded, onEndSession }: Props) {
                         transition: 'all 0.2s ease',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(0, 194, 255, 0.06)';
-                        e.currentTarget.style.borderColor = 'rgba(0, 194, 255, 0.15)';
+                        e.currentTarget.style.background = 'rgba(223, 168, 66, 0.06)';
+                        e.currentTarget.style.borderColor = 'rgba(223, 168, 66, 0.15)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
@@ -409,7 +409,7 @@ export function SessionOrdersRow({ session, expanded, onEndSession }: Props) {
                         fontWeight: 700,
                         fontFamily: 'JetBrains Mono, monospace',
                         color: 'var(--accent-cyan)',
-                        textShadow: '0 0 12px rgba(0, 194, 255, 0.3)',
+                        textShadow: '0 0 12px rgba(223, 168, 66, 0.3)',
                       }}
                     >
                       {formatCurrency(total)}

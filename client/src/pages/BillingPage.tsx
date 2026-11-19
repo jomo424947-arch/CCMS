@@ -439,8 +439,8 @@ export default function BillingPage() {
                         color: 'var(--accent-cyan)',
                         cursor: 'pointer',
                         padding: '6px',
-                        background: 'rgba(0, 194, 255, 0.08)',
-                        border: '1px solid rgba(0, 194, 255, 0.2)',
+                        background: 'rgba(223, 168, 66, 0.08)',
+                        border: '1px solid rgba(223, 168, 66, 0.2)',
                         borderRadius: '6px',
                         display: 'flex',
                         alignItems: 'center',
@@ -452,13 +452,13 @@ export default function BillingPage() {
                         setDetailInvoice(i);
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(0, 194, 255, 0.18)';
+                        e.currentTarget.style.background = 'rgba(223, 168, 66, 0.18)';
                         e.currentTarget.style.borderColor = 'var(--accent-cyan)';
-                        e.currentTarget.style.boxShadow = '0 0 8px rgba(0, 194, 255, 0.25)';
+                        e.currentTarget.style.boxShadow = '0 0 8px rgba(223, 168, 66, 0.25)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(0, 194, 255, 0.08)';
-                        e.currentTarget.style.borderColor = 'rgba(0, 194, 255, 0.2)';
+                        e.currentTarget.style.background = 'rgba(223, 168, 66, 0.08)';
+                        e.currentTarget.style.borderColor = 'rgba(223, 168, 66, 0.2)';
                         e.currentTarget.style.boxShadow = 'none';
                       }}
                     >
@@ -473,7 +473,7 @@ export default function BillingPage() {
                           e.stopPropagation();
                           setActiveMenuId(activeMenuId === i.id ? null : i.id);
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = '#00C2FF'}
+                        onMouseEnter={(e) => e.currentTarget.style.color = '#DFA842'}
                         onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
                       >
                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>more_vert</span>
@@ -658,23 +658,23 @@ export default function BillingPage() {
         {/* Peak utilization card */}
         <div className="ccms-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
-            <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+            <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
               {language === 'ar' ? 'ساعات ذروة التشغيل والضغط' : 'Peak Utilization Hours'}
             </h3>
             <span className="material-symbols-outlined" style={{ color: 'var(--accent-cyan)', fontSize: '20px' }}>equalizer</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'end', gap: '8px', height: '192px', direction: 'ltr' }}>
-            <div style={{ flexGrow: 1, background: 'rgba(0, 194, 255, 0.1)', borderRadius: '4px 4px 0 0', height: '40%' }} />
-            <div style={{ flexGrow: 1, background: 'rgba(0, 194, 255, 0.1)', borderRadius: '4px 4px 0 0', height: '60%' }} />
-            <div style={{ flexGrow: 1, background: 'rgba(0, 194, 255, 0.1)', borderRadius: '4px 4px 0 0', height: '85%' }} />
+            <div style={{ flexGrow: 1, background: 'rgba(223, 168, 66, 0.1)', borderRadius: '4px 4px 0 0', height: '40%' }} />
+            <div style={{ flexGrow: 1, background: 'rgba(223, 168, 66, 0.1)', borderRadius: '4px 4px 0 0', height: '60%' }} />
+            <div style={{ flexGrow: 1, background: 'rgba(223, 168, 66, 0.1)', borderRadius: '4px 4px 0 0', height: '85%' }} />
             <div
               style={{
                 flexGrow: 1,
-                background: 'rgba(0, 194, 255, 0.4)',
+                background: 'rgba(223, 168, 66, 0.4)',
                 borderRadius: '4px 4px 0 0',
                 height: '95%',
-                boxShadow: '0 0 15px rgba(0, 194, 255, 0.2)',
+                boxShadow: '0 0 15px rgba(223, 168, 66, 0.2)',
                 position: 'relative'
               }}
             >
@@ -698,9 +698,9 @@ export default function BillingPage() {
                 {language === 'ar' ? 'الذروة - 98%' : 'PEAK - 98%'}
               </div>
             </div>
-            <div style={{ flexGrow: 1, background: 'rgba(0, 194, 255, 0.1)', borderRadius: '4px 4px 0 0', height: '75%' }} />
-            <div style={{ flexGrow: 1, background: 'rgba(0, 194, 255, 0.1)', borderRadius: '4px 4px 0 0', height: '50%' }} />
-            <div style={{ flexGrow: 1, background: 'rgba(0, 194, 255, 0.1)', borderRadius: '4px 4px 0 0', height: '30%' }} />
+            <div style={{ flexGrow: 1, background: 'rgba(223, 168, 66, 0.1)', borderRadius: '4px 4px 0 0', height: '75%' }} />
+            <div style={{ flexGrow: 1, background: 'rgba(223, 168, 66, 0.1)', borderRadius: '4px 4px 0 0', height: '50%' }} />
+            <div style={{ flexGrow: 1, background: 'rgba(223, 168, 66, 0.1)', borderRadius: '4px 4px 0 0', height: '30%' }} />
           </div>
 
           <div
@@ -736,7 +736,7 @@ export default function BillingPage() {
               }}
             />
             <div>
-              <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
+              <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
                 {language === 'ar' ? 'المزامنة الحية نشطة...' : 'Real-time Syncing...'}
               </h3>
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.4' }}>
@@ -760,7 +760,7 @@ export default function BillingPage() {
               style={{
                 fontFamily: 'JetBrains Mono, monospace',
                 fontSize: '11px',
-                color: 'rgba(0, 194, 255, 0.7)',
+                color: 'rgba(223, 168, 66, 0.7)',
                 display: 'block',
                 lineHeight: '1.6',
                 direction: 'ltr',

@@ -87,9 +87,9 @@ export default function ReservationsPage() {
               padding: '10px 20px',
               borderRadius: '8px',
               border: filter === f ? '1px solid var(--accent-cyan)' : '1px solid rgba(255, 255, 255, 0.1)',
-              background: filter === f ? 'rgba(0, 194, 255, 0.15)' : 'transparent',
+              background: filter === f ? 'rgba(223, 168, 66, 0.15)' : 'transparent',
               color: filter === f ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-              boxShadow: filter === f ? '0 0 10px rgba(0, 194, 255, 0.2)' : 'none',
+              boxShadow: filter === f ? '0 0 10px rgba(223, 168, 66, 0.2)' : 'none',
               transition: 'all 0.2s ease',
               cursor: 'pointer',
             }}

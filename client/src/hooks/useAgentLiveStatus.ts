@@ -1,4 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { resolveWsUrl } from '../services/http';
+import { dataService } from '../services';
 import type { AgentTelemetry } from '../types';
 
 export interface AgentSecurityAlert {
@@ -17,10 +19,24 @@ export function useAgentLiveStatus(onSecurityAlert?: (alert: AgentSecurityAlert)
   const alertCallbackRef = useRef(onSecurityAlert);
   alertCallbackRef.current = onSecurityAlert;
 
+  const fetchRestTelemetry = useCallback(async () => {
+    try {
+      const res = await dataService.listAgentTelemetry();
+      if (Array.isArray(res?.telemetry)) {
+        const nextMap: Record<string, AgentTelemetry> = {};
+        for (const item of res.telemetry) {
+          nextMap[item.device_id] = item;
+        }
+        setTelemetryByDevice((prev) => ({ ...prev, ...nextMap }));
+      }
+    } catch {
+      // Ignore transient telemetry fetch errors
+    }
+  }, []);
+
   const connect = useCallback(() => {
     try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/dashboard`;
+      const wsUrl = resolveWsUrl('/ws/dashboard');
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
@@ -81,8 +97,16 @@ export function useAgentLiveStatus(onSecurityAlert?: (alert: AgentSecurityAlert)
   }, []);
 
   useEffect(() => {
+    fetchRestTelemetry();
     connect();
+    const fallbackInterval = window.setInterval(() => {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+        fetchRestTelemetry();
+      }
+    }, 8000);
+
     return () => {
+      clearInterval(fallbackInterval);
       if (reconnectTimerRef.current) {
         clearTimeout(reconnectTimerRef.current);
       }
@@ -91,10 +115,11 @@ export function useAgentLiveStatus(onSecurityAlert?: (alert: AgentSecurityAlert)
         wsRef.current.close();
       }
     };
-  }, [connect]);
+  }, [connect, fetchRestTelemetry]);
 
   return {
     telemetryByDevice,
     wsConnected,
+    refreshTelemetry: fetchRestTelemetry,
   };
 }

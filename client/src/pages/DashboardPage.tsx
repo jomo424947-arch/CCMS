@@ -176,7 +176,7 @@ export default function DashboardPage() {
           <span className="material-symbols-outlined" style={{ fontSize: '40px', color: 'var(--accent-red)' }}>
             warning
           </span>
-          <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
             {t('failed_load_dashboard')}
           </h2>
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', maxWidth: '480px', margin: 0 }}>
@@ -257,23 +257,23 @@ export default function DashboardPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
-                background: '#0066FF',
-                color: '#FFFFFF',
+                background: 'var(--btn-primary-bg)',
+                color: 'var(--btn-primary-text)',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 padding: '8px 16px',
                 fontSize: '13px',
                 fontWeight: 700,
-                fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit',
+                fontFamily: isRtl ? 'Alexandria, Cairo, sans-serif' : 'inherit',
                 cursor: 'pointer',
-                boxShadow: '0 2px 10px rgba(0, 102, 255, 0.3)',
+                boxShadow: '0 2px 10px rgba(223, 168, 66, 0.25)',
                 transition: 'all 0.2s ease',
                 flex: isMobile ? '1 1 100%' : 'none',
                 minHeight: '38px',
                 whiteSpace: 'nowrap',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#0052CC')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = '#0066FF')}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--btn-primary-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--btn-primary-bg)')}
             >
               <span style={{ fontSize: '16px', fontWeight: 900, lineHeight: 1 }}>+</span>
               <span>{language === 'ar' ? 'بدء وردية جديدة' : 'Start Shift'}</span>
@@ -293,8 +293,8 @@ export default function DashboardPage() {
               fontSize: '12px',
               fontWeight: 600,
               color: 'var(--accent-cyan)',
-              border: '1px solid rgba(0, 194, 255, 0.3)',
-              background: 'rgba(0, 194, 255, 0.08)',
+              border: '1px solid rgba(223, 168, 66, 0.3)',
+              background: 'rgba(223, 168, 66, 0.08)',
               fontFamily: isRtl ? 'Cairo, sans-serif' : 'inherit',
               cursor: 'pointer',
               flex: isMobile ? '1 1 calc(50% - 4px)' : 'none',
@@ -357,15 +357,17 @@ export default function DashboardPage() {
         </div>
       )}
       {/* Stat cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '14px', marginBottom: isMobile ? '16px' : '22px' }}>
         {/* Row 1: Operations (Gaming Active, Available PCs, Cafe Tables) */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: stats.totalTables > 0 
-              ? 'repeat(auto-fit, minmax(260px, 1fr))' 
-              : 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '14px',
+            gridTemplateColumns: isMobile
+              ? 'repeat(2, minmax(0, 1fr))'
+              : stats.totalTables > 0
+              ? 'repeat(3, minmax(0, 1fr))'
+              : 'repeat(2, minmax(0, 1fr))',
+            gap: isMobile ? '10px' : '14px',
           }}
         >
           <StatCard
@@ -374,46 +376,50 @@ export default function DashboardPage() {
             label={t('active_sessions_title')}
             value={stats.active}
             accent="var(--accent-red)"
-            hint={language === 'ar' ? 'أجهزة تعمل الآن' : 'PCs in session'}
+            hint={language === 'ar' ? 'تعمل الآن' : 'Running now'}
             onClick={() => navigate('/sessions')}
           />
           <StatCard
             index={1}
             icon="devices"
-            label={language === 'ar' ? 'الأجهزة المتاحة' : 'Available PCs'}
+            label={language === 'ar' ? 'الأجهزة المتاحة' : 'Available Devices'}
             value={stats.available}
             accent="var(--accent-green)"
             hint={language === 'ar' ? 'جاهزة للبدء' : 'Ready to start'}
             onClick={() => navigate('/devices')}
           />
           {stats.totalTables > 0 && (
-            <StatCard
-              index={2}
-              icon="table_restaurant"
-              label={language === 'ar' ? 'طاولات الكافيه' : 'Café Tables'}
-              value={`${stats.occupiedTables} / ${stats.totalTables}`}
-              accent="var(--accent-cyan)"
-              hint={
-                language === 'ar'
-                  ? `${stats.availableTables} متاحة · ${stats.occupiedTables} مشغولة`
-                  : `${stats.availableTables} free · ${stats.occupiedTables} in use`
-              }
-              onClick={() => navigate('/cafe-tables')}
-            />
+            <div style={{ gridColumn: isMobile ? '1 / -1' : undefined }}>
+              <StatCard
+                index={2}
+                icon="table_restaurant"
+                label={language === 'ar' ? 'طاولات الكافيه' : 'Café Tables'}
+                value={`${stats.occupiedTables} / ${stats.totalTables}`}
+                accent="var(--accent-primary)"
+                hint={
+                  language === 'ar'
+                    ? `${stats.availableTables} متاحة · ${stats.occupiedTables} مشغولة`
+                    : `${stats.availableTables} free · ${stats.occupiedTables} occupied`
+                }
+                onClick={() => navigate('/cafe-tables')}
+              />
+            </div>
           )}
         </div>
 
-        {/* Row 2: Financial Breakdown (3 Cards) */}
+        {/* Row 2: Financial Breakdown */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '14px',
+            gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(3, minmax(0, 1fr))',
+            gap: isMobile ? '10px' : '14px',
           }}
         >
-          <StatCard index={3} icon="sports_esports" label={language === 'ar' ? 'أرباح الأجهزة اليوم' : 'Device Revenue Today'} value={formatCurrency(stats.deviceRevenue)} accent="#8b5cf6" />
-          <StatCard index={4} icon="local_cafe" label={language === 'ar' ? 'أرباح الكافيه اليوم' : 'Café Revenue Today'} value={formatCurrency(stats.cafeRevenue)} accent="#ffaa00" />
-          <StatCard index={5} icon="payments" label={language === 'ar' ? 'إجمالي أرباح اليوم' : 'Total Revenue Today'} value={formatCurrency(stats.revenue)} accent="var(--accent-cyan)" />
+          <StatCard index={3} icon="sports_esports" label={language === 'ar' ? 'إيرادات الأجهزة' : 'Devices Today'} value={formatCurrency(stats.deviceRevenue)} accent="var(--accent-purple)" />
+          <StatCard index={4} icon="local_cafe" label={language === 'ar' ? 'إيرادات الكافيه' : 'Café Today'} value={formatCurrency(stats.cafeRevenue)} accent="var(--accent-yellow)" />
+          <div style={{ gridColumn: isMobile ? '1 / -1' : undefined }}>
+            <StatCard index={5} icon="payments" label={language === 'ar' ? 'إجمالي إيرادات اليوم' : 'Total Revenue Today'} value={formatCurrency(stats.revenue)} accent="var(--accent-primary)" />
+          </div>
         </div>
       </div>
 
@@ -421,27 +427,28 @@ export default function DashboardPage() {
       <div className="ccms-card" style={{ padding: '0', overflow: 'hidden' }}>
         <div
           style={{
-            padding: '20px 24px',
+            padding: isMobile ? '14px 16px' : '18px 22px',
             borderBottom: '1px solid var(--border-default)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            gap: '10px',
           }}
         >
-          <div>
-            <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ fontFamily: 'Plus Jakarta Sans, Alexandria, sans-serif', fontSize: isMobile ? '15px' : '17px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
               {t('active_sessions_title')}
             </h2>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
-              {activeSessions.length} {language === 'ar' ? 'جلسة تعمل الآن' : `session${activeSessions.length === 1 ? '' : 's'} running now`}
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '3px', marginBottom: 0 }}>
+              {activeSessions.length} {language === 'ar' ? 'جلسة تعمل الآن' : `session${activeSessions.length === 1 ? '' : 's'} running`}
             </p>
           </div>
           <button
             className="ccms-btn ccms-btn-ghost"
-            style={{ fontSize: '12px', padding: '8px 16px', minHeight: '36px' }}
+            style={{ fontSize: '12px', padding: '6px 12px', minHeight: '34px', flexShrink: 0 }}
             onClick={() => navigate('/sessions')}
           >
-            {language === 'ar' ? 'عرض الكل ←' : 'View all →'}
+            {language === 'ar' ? 'عرض الكل' : 'View all'}
           </button>
         </div>
 

@@ -65,14 +65,14 @@ export default function ReportsPage() {
   const peakHour = usage.peak_hours.reduce((a, b) => (b.count > a.count ? b : a), usage.peak_hours[0]);
 
   return (
-    <Layout title={t('reports')} subtitle={language === 'ar' ? 'إحصائيات شاملة ومقاييس استخدام الأجهزة وسجلات الإيرادات والمبيعات.' : 'Comprehensive device fleet metrics, peak monitoring, and billing analytics'}>
+    <Layout title={t('reports')} subtitle={language === 'ar' ? 'ملخص الإيرادات والأرباح وأوقات الذروة واستخدام الأجهزة.' : 'Revenue totals, peak hours, and device usage summary.'}>
       {/* Revenue totals */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '24px',
-          marginBottom: '32px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: '12px',
+          marginBottom: '24px',
         }}
       >
         <StatCard
@@ -111,7 +111,7 @@ export default function ReportsPage() {
 
       {/* Revenue chart */}
       <div className="ccms-card ccms-stagger" style={{ padding: '24px', marginBottom: '32px' }}>
-        <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', margin: 0 }}>
+        <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', margin: 0 }}>
           {language === 'ar' ? 'الإيرادات — آخر 14 يوماً' : 'Revenue — Last 14 Days'}
         </h2>
         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px', margin: 0 }}>
@@ -123,8 +123,8 @@ export default function ReportsPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }} className="report-grid">
         {/* Device usage */}
         <div className="ccms-card ccms-stagger" style={{ padding: '24px' }}>
-          <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', margin: 0 }}>
-            {language === 'ar' ? 'استخدام أجهزة الصالة — 30 يوماً' : 'Device Fleet Usage — 30 Days'}
+          <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', margin: 0 }}>
+            {language === 'ar' ? 'استخدام أجهزة الصالة — 30 يوماً' : 'Device Usage — 30 Days'}
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px', margin: 0 }}>
             {language === 'ar' ? 'إجمالي وقت النشاط لكل جهاز بالدقائق' : 'Total active time per device'}
@@ -140,7 +140,7 @@ export default function ReportsPage() {
 
         {/* Peak hours */}
         <div className="ccms-card ccms-stagger" style={{ padding: '24px' }}>
-          <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', margin: 0 }}>
+          <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', margin: 0 }}>
             {language === 'ar' ? 'ساعات النشاط والتشغيل العالية' : 'Peak Operating Hours'}
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px', margin: 0 }}>
@@ -198,7 +198,7 @@ function LeaderboardWidget() {
     <div className="ccms-card ccms-stagger" style={{ padding: '24px', marginTop: '32px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', margin: 0 }}>
+          <h2 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', margin: 0 }}>
             {language === 'ar' ? 'قائمة العملاء الأكثر لعباً ونشاطاً' : 'Top Customers Leaderboard'}
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>

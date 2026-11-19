@@ -5,6 +5,7 @@ import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { LoadingSpinner } from './ui/LoadingSpinner';
 import { dataService } from '../services';
+import { useLanguage } from '../context/LanguageContext';
 import type { Device, Session, SessionAuditLog, AgentTelemetry, AgentStatus } from '../types';
 
 interface DeviceCardProps {
@@ -62,7 +63,7 @@ function getDeviceBrandBadge(type: string, name?: string, specs?: Record<string,
         fontWeight: 900,
         fontSize: '15px',
         boxShadow: '0 0 12px rgba(34, 197, 94, 0.4)',
-        fontFamily: 'Space Grotesk, sans-serif'
+        fontFamily: 'Plus Jakarta Sans, sans-serif'
       }}>
         8
       </div>
@@ -87,7 +88,7 @@ function getDeviceBrandBadge(type: string, name?: string, specs?: Record<string,
         fontWeight: 800,
         fontSize: '12px',
         boxShadow: '0 0 12px rgba(16, 185, 129, 0.4)',
-        fontFamily: 'Space Grotesk, sans-serif'
+        fontFamily: 'Plus Jakarta Sans, sans-serif'
       }}>
         XBOX
       </div>
@@ -102,17 +103,17 @@ function getDeviceBrandBadge(type: string, name?: string, specs?: Record<string,
         height: '36px',
         padding: '0 8px',
         borderRadius: '18px',
-        border: '2px solid rgba(0, 140, 255, 0.8)',
-        background: 'rgba(10, 15, 25, 0.9)',
+        border: '1.5px solid rgba(223, 168, 66, 0.7)',
+        background: 'rgba(11, 11, 13, 0.92)',
         backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#0099FF',
+        color: '#DFA842',
         fontWeight: 800,
         fontSize: '12px',
-        boxShadow: '0 0 12px rgba(0, 150, 255, 0.4)',
-        fontFamily: 'Space Grotesk, sans-serif'
+        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.4)',
+        fontFamily: 'Plus Jakarta Sans, sans-serif'
       }}>
         PS5
       </div>
@@ -127,17 +128,17 @@ function getDeviceBrandBadge(type: string, name?: string, specs?: Record<string,
         height: '36px',
         padding: '0 8px',
         borderRadius: '18px',
-        border: '2px solid rgba(59, 130, 246, 0.8)',
+        border: '2px solid rgba(223, 168, 66, 0.8)',
         background: 'rgba(10, 15, 25, 0.9)',
         backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#3b82f6',
+        color: '#DFA842',
         fontWeight: 800,
         fontSize: '12px',
-        boxShadow: '0 0 12px rgba(59, 130, 246, 0.4)',
-        fontFamily: 'Space Grotesk, sans-serif'
+        boxShadow: '0 0 12px rgba(223, 168, 66, 0.4)',
+        fontFamily: 'Plus Jakarta Sans, sans-serif'
       }}>
         PS4
       </div>
@@ -162,7 +163,7 @@ function getDeviceBrandBadge(type: string, name?: string, specs?: Record<string,
         fontWeight: 800,
         fontSize: '12px',
         boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)',
-        fontFamily: 'Space Grotesk, sans-serif'
+        fontFamily: 'Plus Jakarta Sans, sans-serif'
       }}>
         PS3
       </div>
@@ -187,7 +188,7 @@ function getDeviceBrandBadge(type: string, name?: string, specs?: Record<string,
         fontWeight: 800,
         fontSize: '11px',
         boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)',
-        fontFamily: 'Space Grotesk, sans-serif'
+        fontFamily: 'Plus Jakarta Sans, sans-serif'
       }}>
         SWITCH
       </div>
@@ -199,14 +200,14 @@ function getDeviceBrandBadge(type: string, name?: string, specs?: Record<string,
       width: '36px',
       height: '36px',
       borderRadius: '50%',
-      border: '2px solid rgba(0, 140, 255, 0.8)',
-      background: 'rgba(10, 15, 25, 0.85)',
+      border: '1.5px solid rgba(223, 168, 66, 0.7)',
+      background: 'rgba(11, 11, 13, 0.9)',
       backdropFilter: 'blur(4px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      color: '#0099FF',
-      boxShadow: '0 0 12px rgba(0, 150, 255, 0.4)'
+      color: '#DFA842',
+      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.4)'
     }}>
       <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>sports_esports</span>
     </div>
@@ -230,6 +231,8 @@ export function DeviceCard({
   onOpenAgentLogs,
   index = 0 
 }: DeviceCardProps) {
+  const { language } = useLanguage();
+  const isAr = language === 'ar';
   const liveNow = useNow(1000);
   const currentNow = now ?? liveNow;
   const isActive = device.status === 'in_use';
@@ -505,7 +508,7 @@ export function DeviceCard({
                 style={{
                   background: 'rgba(10, 15, 25, 0.75)',
                   backdropFilter: 'blur(4px)',
-                  border: '1px solid rgba(0, 194, 255, 0.4)',
+                  border: '1px solid rgba(223, 168, 66, 0.4)',
                   color: 'var(--accent-cyan)',
                   borderRadius: '6px',
                   padding: '4px 8px',
@@ -543,7 +546,7 @@ export function DeviceCard({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
             <h4
               style={{
-                fontFamily: 'Space Grotesk, sans-serif',
+                fontFamily: 'Plus Jakarta Sans, sans-serif',
                 fontSize: '20px',
                 fontWeight: 800,
                 color: '#FFFFFF',
@@ -566,7 +569,7 @@ export function DeviceCard({
                   fontFamily: 'JetBrains Mono, monospace',
                   background:
                     agentStatus === 'online_in_session'
-                      ? 'rgba(0, 194, 255, 0.18)'
+                      ? 'rgba(223, 168, 66, 0.18)'
                       : agentStatus === 'online_locked'
                       ? 'rgba(16, 185, 129, 0.18)'
                       : agentStatus === 'maintenance'
@@ -574,7 +577,7 @@ export function DeviceCard({
                       : 'rgba(255, 255, 255, 0.08)',
                   border:
                     agentStatus === 'online_in_session'
-                      ? '1px solid rgba(0, 194, 255, 0.45)'
+                      ? '1px solid rgba(223, 168, 66, 0.45)'
                       : agentStatus === 'online_locked'
                       ? '1px solid rgba(16, 185, 129, 0.45)'
                       : agentStatus === 'maintenance'
@@ -582,7 +585,7 @@ export function DeviceCard({
                       : '1px solid rgba(255, 255, 255, 0.14)',
                   color:
                     agentStatus === 'online_in_session'
-                      ? '#00C2FF'
+                      ? '#DFA842'
                       : agentStatus === 'online_locked'
                       ? '#10b981'
                       : agentStatus === 'maintenance'
@@ -601,14 +604,14 @@ export function DeviceCard({
                 </span>
                 <span>
                   {agentStatus === 'online_in_session'
-                    ? 'UNLOCKED'
+                    ? isAr ? 'مفتوح' : 'Unlocked'
                     : agentStatus === 'online_locked'
-                    ? 'LOCKED'
+                    ? isAr ? 'مقفل' : 'Locked'
                     : agentStatus === 'maintenance'
-                    ? 'MAINT'
+                    ? isAr ? 'صيانة' : 'Maint'
                     : agentStatus === 'offline'
-                    ? 'OFFLINE'
-                    : 'UNPAIRED'}
+                    ? isAr ? 'غير متصل' : 'Offline'
+                    : isAr ? 'غير مربوط' : 'Unlinked'}
                 </span>
               </span>
             )}
@@ -657,8 +660,8 @@ export function DeviceCard({
             style={{
               padding: '9px 11px',
               borderRadius: '10px',
-              background: 'rgba(0, 194, 255, 0.04)',
-              border: '1px solid rgba(0, 194, 255, 0.14)',
+              background: 'rgba(223, 168, 66, 0.04)',
+              border: '1px solid rgba(223, 168, 66, 0.14)',
               display: 'flex',
               flexDirection: 'column',
               gap: '8px',
@@ -669,7 +672,7 @@ export function DeviceCard({
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '3px' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>CPU</span>
-                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#00C2FF' }}>
+                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#DFA842' }}>
                       {telemetry.cpu_percent}%
                     </span>
                   </div>
@@ -678,7 +681,7 @@ export function DeviceCard({
                       style={{
                         width: `${Math.min(100, telemetry.cpu_percent)}%`,
                         height: '100%',
-                        background: telemetry.cpu_percent > 85 ? '#ef4444' : '#00C2FF',
+                        background: telemetry.cpu_percent > 85 ? '#ef4444' : '#DFA842',
                         transition: 'width 0.3s ease',
                       }}
                     />
@@ -705,15 +708,19 @@ export function DeviceCard({
               </div>
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                <span>Agent: {agentStatus === 'unpaired' ? 'Unpaired Terminal' : 'Disconnected'}</span>
+                <span>
+                  {agentStatus === 'unpaired'
+                    ? isAr ? 'غير مربوط بالنظام' : 'Not Linked'
+                    : isAr ? 'غير متصل' : 'Disconnected'}
+                </span>
                 {onPairAgent && (
                   <button
                     type="button"
                     onClick={() => onPairAgent(device)}
                     style={{
-                      background: 'rgba(0, 194, 255, 0.14)',
-                      border: '1px solid rgba(0, 194, 255, 0.35)',
-                      color: '#00C2FF',
+                      background: 'rgba(223, 168, 66, 0.14)',
+                      border: '1px solid rgba(223, 168, 66, 0.35)',
+                      color: '#DFA842',
                       borderRadius: '6px',
                       padding: '2px 8px',
                       fontSize: '11px',
@@ -721,27 +728,27 @@ export function DeviceCard({
                       cursor: 'pointer',
                     }}
                   >
-                    Pair Agent
+                    {isAr ? 'ربط الجهاز' : 'Connect PC'}
                   </button>
                 )}
               </div>
             )}
 
-            {/* Agent Quick Control Toolbar */}
+            {/* Quick Control Toolbar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '6px' }}>
-              <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
-                {telemetry?.active_window_title || 'CCMS Agent v1.2'}
+              <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '130px' }}>
+                {telemetry?.active_window_title || (isAr ? 'جاهز للتحكم' : 'Ready')}
               </span>
               <div style={{ display: 'flex', gap: '4px' }}>
                 {onSendMessage && (
                   <button
                     type="button"
-                    title="Send Screen Message to Player"
+                    title={isAr ? 'إرسال رسالة على الشاشة' : 'Send Screen Message'}
                     onClick={() => onSendMessage(device)}
                     style={{
                       background: 'rgba(255,255,255,0.05)',
                       border: '1px solid rgba(255,255,255,0.1)',
-                      color: '#00C2FF',
+                      color: '#DFA842',
                       borderRadius: '6px',
                       padding: '3px 6px',
                       cursor: 'pointer',
@@ -755,7 +762,7 @@ export function DeviceCard({
                 {onPowerControl && (
                   <button
                     type="button"
-                    title="Remote Restart / Shutdown PC"
+                    title={isAr ? 'إعادة تشغيل أو إيقاف الجهاز' : 'Restart / Shutdown PC'}
                     onClick={() => onPowerControl(device, activeSession)}
                     style={{
                       background: 'rgba(255,255,255,0.05)',
@@ -774,12 +781,12 @@ export function DeviceCard({
                 {onOpenAgentLogs && (
                   <button
                     type="button"
-                    title="Agent Security & Signed Command Audit Log"
+                    title={isAr ? 'سجل أوامر الجهاز' : 'Device Activity Log'}
                     onClick={() => onOpenAgentLogs(device)}
                     style={{
                       background: 'rgba(255,255,255,0.05)',
                       border: '1px solid rgba(255,255,255,0.1)',
-                      color: '#a855f7',
+                      color: '#C48A69',
                       borderRadius: '6px',
                       padding: '3px 6px',
                       cursor: 'pointer',
@@ -787,7 +794,7 @@ export function DeviceCard({
                       alignItems: 'center',
                     }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>shield</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>history</span>
                   </button>
                 )}
               </div>
@@ -832,8 +839,8 @@ export function DeviceCard({
                   ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
                   : isBilliards
                   ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                  : 'linear-gradient(135deg, #0066FF 0%, #0044CC 100%)',
-                color: '#FFFFFF',
+                  : 'linear-gradient(135deg, #DFA842 0%, #B67B1B 100%)',
+                color: isActive || isBilliards ? '#FFFFFF' : '#0C0C0E',
                 fontSize: '13px',
                 fontWeight: 800,
                 letterSpacing: '0.8px',
@@ -843,7 +850,7 @@ export function DeviceCard({
                   ? '0 4px 16px rgba(239, 68, 68, 0.4)'
                   : isBilliards
                   ? '0 4px 16px rgba(16, 185, 129, 0.4)'
-                  : '0 4px 16px rgba(0, 102, 255, 0.4)',
+                  : '0 4px 16px rgba(223, 168, 66, 0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

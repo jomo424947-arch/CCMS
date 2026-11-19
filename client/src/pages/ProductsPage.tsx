@@ -122,7 +122,7 @@ export default function ProductsPage() {
             padding: '10px 20px',
             borderRadius: '8px',
             border: activeTab === 'catalog' ? '1px solid var(--accent-cyan)' : '1px solid transparent',
-            background: activeTab === 'catalog' ? 'rgba(0, 194, 255, 0.1)' : 'transparent',
+            background: activeTab === 'catalog' ? 'rgba(223, 168, 66, 0.1)' : 'transparent',
             color: activeTab === 'catalog' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
             fontWeight: 600,
             fontSize: '14px',
@@ -331,7 +331,7 @@ export default function ProductsPage() {
                                     {language === 'ar' ? `منخفض (${item.stock})` : `Low (${item.stock})`}
                                   </span>
                                 ) : (
-                                  <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '12px', background: 'rgba(0, 194, 255, 0.1)', color: 'var(--accent-cyan)', border: '1px solid rgba(0, 194, 255, 0.2)' }}>
+                                  <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '12px', background: 'rgba(223, 168, 66, 0.1)', color: 'var(--accent-cyan)', border: '1px solid rgba(223, 168, 66, 0.2)' }}>
                                     {language === 'ar' ? `متوفر (${item.stock})` : `In Stock (${item.stock})`}
                                   </span>
                                 )}
@@ -544,8 +544,8 @@ function ProductCard({
             width: '44px',
             height: '44px',
             borderRadius: '12px',
-            background: isOutOfStock ? 'rgba(255, 68, 102, 0.1)' : 'rgba(0, 194, 255, 0.08)',
-            border: isOutOfStock ? '1px solid rgba(255, 68, 102, 0.2)' : '1px solid rgba(0, 194, 255, 0.15)',
+            background: isOutOfStock ? 'rgba(255, 68, 102, 0.1)' : 'rgba(223, 168, 66, 0.08)',
+            border: isOutOfStock ? '1px solid rgba(255, 68, 102, 0.2)' : '1px solid rgba(223, 168, 66, 0.15)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -562,7 +562,7 @@ function ProductCard({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontFamily: 'Space Grotesk, sans-serif',
+              fontFamily: 'Plus Jakarta Sans, sans-serif',
               fontSize: '16px',
               fontWeight: 600,
               color: 'var(--text-primary)',
@@ -637,9 +637,9 @@ function ProductCard({
               fontWeight: 600,
               padding: '4px 10px',
               borderRadius: '20px',
-              background: 'rgba(0, 194, 255, 0.1)',
+              background: 'rgba(223, 168, 66, 0.1)',
               color: 'var(--accent-cyan)',
-              border: '1px solid rgba(0, 194, 255, 0.2)',
+              border: '1px solid rgba(223, 168, 66, 0.2)',
             }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>check_circle</span>
@@ -936,7 +936,7 @@ function RestockModal({
           onChange={(e) => setDelta(e.target.value)}
         />
 
-        <div style={{ padding: '10px 14px', background: resultingBalance >= 0 ? 'rgba(0, 194, 255, 0.08)' : 'rgba(255, 68, 102, 0.1)', borderRadius: '8px', border: resultingBalance >= 0 ? '1px solid rgba(0, 194, 255, 0.2)' : '1px solid rgba(255, 68, 102, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '10px 14px', background: resultingBalance >= 0 ? 'rgba(223, 168, 66, 0.08)' : 'rgba(255, 68, 102, 0.1)', borderRadius: '8px', border: resultingBalance >= 0 ? '1px solid rgba(223, 168, 66, 0.2)' : '1px solid rgba(255, 68, 102, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{language === 'ar' ? 'الرصيد المتوقع بعد التعديل' : 'Resulting Balance'}</span>
           <span style={{ fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', color: resultingBalance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)', fontSize: '15px' }}>{resultingBalance}</span>
         </div>
@@ -969,7 +969,7 @@ function StockHistoryModal({
       case 'restock':
         return { label: language === 'ar' ? 'توريد' : 'Restock', bg: 'rgba(0, 230, 153, 0.15)', color: 'var(--accent-green)' };
       case 'sale':
-        return { label: language === 'ar' ? 'بيع جلسة' : 'Session Sale', bg: 'rgba(0, 194, 255, 0.15)', color: 'var(--accent-cyan)' };
+        return { label: language === 'ar' ? 'بيع جلسة' : 'Session Sale', bg: 'rgba(223, 168, 66, 0.15)', color: 'var(--accent-cyan)' };
       case 'standalone_sale':
         return { label: language === 'ar' ? 'بيع مباشر' : 'Walk-in Sale', bg: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' };
       case 'void_order':

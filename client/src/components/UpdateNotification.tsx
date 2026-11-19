@@ -64,8 +64,8 @@ export function UpdateNotification() {
         zIndex: 99999,
         maxWidth: '420px',
         backgroundColor: '#161618',
-        border: '1px solid var(--accent-cyan, #06b6d4)',
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(6, 182, 212, 0.25)',
+        border: '1px solid var(--accent-cyan, #DFA842)',
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(223, 168, 66, 0.25)',
         borderRadius: '12px',
         padding: '16px',
         color: '#ffffff',
@@ -80,11 +80,11 @@ export function UpdateNotification() {
             width: '36px',
             height: '36px',
             borderRadius: '8px',
-            backgroundColor: updateDownloaded ? 'rgba(34, 197, 94, 0.15)' : 'rgba(6, 182, 212, 0.15)',
+            backgroundColor: updateDownloaded ? 'rgba(34, 197, 94, 0.15)' : 'rgba(223, 168, 66, 0.15)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: updateDownloaded ? '#22c55e' : '#06b6d4',
+            color: updateDownloaded ? '#22c55e' : '#DFA842',
             flexShrink: 0,
           }}
         >
@@ -127,7 +127,7 @@ export function UpdateNotification() {
                 style={{
                   width: `${downloadProgress}%`,
                   height: '100%',
-                  backgroundColor: 'var(--accent-cyan, #06b6d4)',
+                  backgroundColor: 'var(--accent-cyan, #DFA842)',
                   transition: 'width 0.2s ease',
                 }}
               />

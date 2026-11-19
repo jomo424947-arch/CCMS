@@ -82,9 +82,10 @@ export interface DataService {
     plan?: string;
     expires_at?: string;
     secretKey: string;
-  }): Promise<{ success: boolean; tenant: { id: string; name: string; owner_email: string; plan?: string; expires_at?: string; status?: string } }>;
+  }): Promise<{ success: boolean; tenant: { id: string; name: string; owner_email: string; plan?: string; expires_at?: string; status?: string; created_at?: string } }>;
   getTenants(secretKey: string): Promise<{ success: boolean; tenants: any[] }>;
   updateTenantStatus(id: string, updates: { status?: string; plan?: string; expires_at?: string } | string, secretKey: string): Promise<{ success: boolean; tenant?: any }>;
+  deleteTenant(id: string, secretKey: string): Promise<{ success: boolean; message?: string }>;
   listPublicEmployees(): Promise<User[]>;
   syncCloud?(): Promise<{ success: boolean; message: string }>;
 
